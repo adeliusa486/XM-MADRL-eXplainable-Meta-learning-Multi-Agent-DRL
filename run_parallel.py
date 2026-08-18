@@ -34,7 +34,7 @@ def worker_env():
     env = os.environ.copy()
     env["OMP_NUM_THREADS"] = "1"
     env["MKL_NUM_THREADS"] = "1"
-    env["CUDA_VISIBLE_DEVICES"] = ""          # force CPU; parallel CPU beats shared GPU here
+    env["CUDA_VISIBLE_DEVICES"] = "-1"        # force CPU; parallel CPU beats a shared GPU here
     return env
 
 
@@ -70,7 +70,8 @@ def main():
                 continue
             jobs.append((f"{m}_s{s}",
                          [py, "train.py", "--method", m, "--seed", str(s),
-                          "--steps", str(args.steps), "--results", args.results]))
+                          "--steps", str(args.steps), "--results", args.results,
+                          "--device", "cpu"]))
     for s in args.seeds:
         if not (results / f"signal_maml_seed{s}.json").exists():
             jobs.append((f"signal_s{s}",
