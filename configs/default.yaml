@@ -1,0 +1,52 @@
+# Default configuration for the XM-MADRL experiments.
+# These values mirror the defaults hard-coded in env/uav_swarm_env.py and
+# train.py; edit and pass via your own launcher if you want to sweep them.
+
+environment:
+  n_agents: 8
+  n_channels: 6
+  n_targets: 4
+  n_jammers: 2
+  area_size: 1000.0        # metres
+  max_speed: 25.0          # m/step
+  dt: 0.1                  # s/step
+  max_steps: 300
+  comm_range: 300.0
+  collision_dist: 15.0
+  detect_range: 120.0
+
+reward_weights:
+  w_comm: 1.0
+  w_mission: 1.5
+  w_energy: 0.5
+  w_jam: 0.8
+  w_safety: 2.0
+
+ppo:
+  gamma: 0.99
+  lam: 0.95
+  clip: 0.2
+  lr: 0.0003
+  epochs: 4
+  entropy_coef: 0.01
+  value_coef: 0.5
+  rollout_steps: 256
+
+maml:
+  meta_tasks: 4
+  inner_lr: 0.01
+  inner_steps: 1
+
+model:
+  hidden: 128
+  n_heads: 4
+  transformer_layers: 2
+  gnn_layers: 2
+
+training:
+  total_steps: 300000
+  seeds: [11, 22, 33, 44, 55]
+
+hardware:
+  reported_gpu: "NVIDIA RTX 4060"
+  framework: "PyTorch 2.x"

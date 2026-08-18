@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.pt
+*.ckpt
+results/
+figures/
+data/
+*.hdf5
+.venv/
+venv/
+.env
+.DS_Store
+.ipynb_checkpoints/
