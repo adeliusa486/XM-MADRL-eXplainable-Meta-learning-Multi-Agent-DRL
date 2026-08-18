@@ -2,10 +2,10 @@ __pycache__/
 *.py[cod]
 *.pt
 *.ckpt
-results/
-figures/
 data/
 *.hdf5
+# NOTE: results/*.json and figures/ ARE tracked (the paper is generated from them);
+# only the heavy model weights (*.pt above) are ignored.
 .venv/
 venv/
 .env
