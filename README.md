@@ -38,9 +38,22 @@ QUICK=1 bash run_all.sh        # 1 seed, tiny budget — proves the pipeline end
 
 ## Full study
 
+**Recommended (fast, parallel):** the RL bottleneck is the single-threaded,
+CPU-bound rollout, not GPU compute (the networks are tiny). Running many
+single-threaded jobs at once — one per core — is far faster than one GPU job:
+
+```bash
+python run_parallel.py --workers 12      # ~N× faster on an N-core machine
+```
+
+**Sequential alternative:**
+
 ```bash
 bash run_all.sh                # 5 seeds × {proposed, 4 baselines, 4 ablations}
 ```
+
+Both cover the same 5 seeds × {proposed, 4 baselines, 4 ablations} + few-shot
+signal MAML, and both then run stats → SHAP → figures automatically.
 
 This trains, evaluates, runs the statistics, the SHAP analysis and the
 few-shot signal-classification experiment, then writes every figure and table.
