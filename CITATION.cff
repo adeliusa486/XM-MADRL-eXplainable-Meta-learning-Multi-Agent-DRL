@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "XM-MADRL: eXplainable Meta-learning Multi-Agent Deep Reinforcement Learning for Cognitive UAV Swarms in Electronic-Warfare Environments"
+authors:
+  - family-names: "Ahmad"
+    given-names: "Adeel"
+version: "1.0.0"
+date-released: "2026-08-18"
+license: MIT
+repository-code: "https://github.com/adeliusa486/XM-MADRL-eXplainable-Meta-learning-Multi-Agent-DRL"
+keywords:
+  - reinforcement-learning
+  - multi-agent
+  - meta-learning
+  - graph-neural-networks
+  - explainable-ai
+  - unmanned-aerial-vehicles
+  - electronic-warfare

@@ -1,111 +1,191 @@
-# XM-MADRL — eXplainable Meta-learning Multi-Agent Deep Reinforcement Learning
+<div align="center">
 
-Reference implementation for the paper **“Adaptive Explainable Meta-Reinforcement
-Learning with Graph Intelligence for Cognitive UAV Swarms in Electronic-Warfare
-Environments.”**
+# XM-MADRL
 
-The framework combines five components into a single cooperative decision-making
-pipeline for cognitive UAV swarms operating in contested spectrum:
+### eXplainable Meta-learning Multi-Agent Deep Reinforcement Learning<br/>for Cognitive UAV Swarms in Electronic-Warfare Environments
 
-| Component | Module | File |
-|---|---|---|
-| Multi-modal sensing + transformer fusion | token-per-modality → Transformer encoder | `models/policy.py` |
-| Graph-based swarm communication | dense 2-layer GCN over the comm graph | `models/gnn.py` |
-| Cooperative policy optimisation | Multi-Agent PPO, centralised critic | `algos/mappo.py` |
-| Fast task adaptation | first-order MAML meta-training | `algos/mappo.py` |
-| Explainability | SHAP feature-group attribution | `xai/shap_explain.py` |
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-ee4c2c.svg)](https://pytorch.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Reproducible](https://img.shields.io/badge/results-reproducible-brightgreen.svg)](#reproducibility)
+[![Code style](https://img.shields.io/badge/status-research%20code-informational.svg)](#)
 
-Everything runs against a fast, fully reproducible **NumPy multi-agent
-environment** (`env/uav_swarm_env.py`) that models UAV kinematics, an SINR/PDR
-channel with fading, an adaptive **jammer**, dynamic **spectrum access**, target
-detection and a multi-objective (comms / mission / energy / anti-jam / safety)
-reward. It is intentionally lightweight so the full study runs on a single
-consumer GPU — **not** a photorealistic simulator.
+*A unified framework combining multi-modal sensing, transformer fusion, graph-based
+swarm communication, meta-learning and SHAP explainability for cooperative UAV
+decision-making in contested spectrum.*
 
-## Install
+</div>
+
+---
+
+## Overview
+
+Cognitive UAV swarms operating in electronic-warfare environments must navigate
+GPS-denied airspace, share a congested radio spectrum, resist adaptive jamming,
+and coordinate — all while remaining **interpretable** for mission-critical use.
+**XM-MADRL** addresses these jointly in a single learning pipeline:
+
+| # | Capability | Component | Source |
+|:-:|---|---|---|
+| 1 | Multi-modal sensing + fusion | per-modality tokens → **Transformer** encoder | [`models/policy.py`](models/policy.py) |
+| 2 | Swarm communication | dense **2-layer GCN** over the comm graph | [`models/gnn.py`](models/gnn.py) |
+| 3 | Cooperative control | **Multi-Agent PPO**, centralised critic | [`algos/mappo.py`](algos/mappo.py) |
+| 4 | Fast task adaptation | first-order **MAML** meta-training | [`algos/mappo.py`](algos/mappo.py) |
+| 5 | Explainability | **SHAP** feature-group attribution | [`xai/shap_explain.py`](xai/shap_explain.py) |
+
+All methods are trained and evaluated in a fast, fully reproducible **NumPy
+multi-agent environment** ([`env/uav_swarm_env.py`](env/uav_swarm_env.py)) that
+models UAV kinematics, an SINR/PDR fading channel, an **adaptive jammer**,
+dynamic spectrum access, target detection and a multi-objective reward. It is
+intentionally lightweight — the entire study runs on a single laptop, no
+photorealistic simulator required.
+
+## Architecture
+
+```
+        ┌──────────────────────── per-UAV observation ────────────────────────┐
+        │  RF (RSSI · SINR · occupancy) │ radar │ visual │ nav (pos·vel·energy) │
+        └───────────────────────────────┬──────────────────────────────────────┘
+                                         │  modality tokens
+                                 ┌───────▼────────┐
+                                 │  Transformer   │   multi-modal fusion
+                                 │    encoder     │
+                                 └───────┬────────┘
+                                         │  per-agent feature
+                            ┌────────────▼────────────┐
+                            │  Graph Conv (GCN) comm  │   swarm coordination
+                            │   over comm-range graph │
+                            └────────────┬────────────┘
+                                         │  contextual feature
+                       ┌─────────────────┼─────────────────┐
+                 ┌─────▼─────┐     ┌──────▼──────┐    ┌──────▼──────┐
+                 │  Actor    │     │  Centralised│    │    SHAP     │
+                 │ (MAPPO)   │     │   Critic    │    │ explainer   │
+                 └─────┬─────┘     └─────────────┘    └─────────────┘
+                       │  action = [move_x, move_y, channel-select]
+                 ┌─────▼──────────────────────────────────┐
+                 │  MAML outer loop: adapt across EW tasks │
+                 └─────────────────────────────────────────┘
+```
+
+## Installation
 
 ```bash
+git clone https://github.com/adeliusa486/XM-MADRL-eXplainable-Meta-learning-Multi-Agent-DRL.git
+cd XM-MADRL-eXplainable-Meta-learning-Multi-Agent-DRL
 pip install -r requirements.txt
 ```
 
-Python 3.10+ and (optionally) a CUDA GPU. CPU works but is slower.
+Requires Python 3.10+. A GPU is **not** needed — the networks are small and the
+workload is CPU-bound (see [Performance](#performance)).
 
-## Quick sanity check (a few minutes)
+## Quick start
 
 ```bash
-QUICK=1 bash run_all.sh        # 1 seed, tiny budget — proves the pipeline end-to-end
+# 5-minute sanity check that the whole pipeline runs end-to-end
+QUICK=1 python run_parallel.py --workers 4
 ```
 
-## Full study
-
-**Recommended (fast, parallel):** the RL bottleneck is the single-threaded,
-CPU-bound rollout, not GPU compute (the networks are tiny). Running many
-single-threaded jobs at once — one per core — is far faster than one GPU job:
+## Reproduce the full study
 
 ```bash
-python run_parallel.py --workers 12      # ~N× faster on an N-core machine
+# Recommended: parallel across CPU cores (N× faster on an N-core machine)
+python run_parallel.py --workers 12
+
+# Sequential equivalent
+bash run_all.sh
 ```
 
-**Sequential alternative:**
+Either command runs **5 seeds × {proposed, 4 baselines, 4 ablations}** plus the
+few-shot signal-classification experiment, then automatically produces the
+statistics, SHAP analysis, and every figure/table. Runs **checkpoint** to
+`results/` — stop and re-run any time; finished runs are skipped.
+
+<details>
+<summary><b>Run individual pieces</b></summary>
 
 ```bash
-bash run_all.sh                # 5 seeds × {proposed, 4 baselines, 4 ablations}
-```
-
-Both cover the same 5 seeds × {proposed, 4 baselines, 4 ablations} + few-shot
-signal MAML, and both then run stats → SHAP → figures automatically.
-
-This trains, evaluates, runs the statistics, the SHAP analysis and the
-few-shot signal-classification experiment, then writes every figure and table.
-Each run **checkpoints** to `results/`; stop and re-run any time — finished runs
-are skipped.
-
-Individual pieces:
-
-```bash
-python train.py --method XM-MADRL --seed 11      # proposed
-python train.py --method PPO      --seed 11      # baseline
-python train.py --method XM-noGNN --seed 11      # ablation
-python signal_maml.py --seed 11                  # few-shot MAML (RadioML/synthetic)
-python stats.py --results results --baseline PPO
-python run_shap.py --weights results/XM-MADRL_seed11.pt
+python train.py --method XM-MADRL --seed 11     # proposed
+python train.py --method PPO      --seed 11     # baseline
+python train.py --method XM-noGNN --seed 11     # ablation
+python signal_maml.py --seed 11                 # few-shot MAML (RadioML/synthetic)
+python stats.py       --results results --baseline PPO
+python run_shap.py    --weights results/XM-MADRL_seed11.pt
 python make_figures.py --results results --out figures
 ```
+</details>
 
-## Methods / ablations
+## Methods & ablations
 
-| Tag | Transformer | GNN | MAML | Purpose |
+| Tag | Transformer | GNN | MAML | Role |
 |---|:--:|:--:|:--:|---|
-| `XM-MADRL` | ✅ | ✅ | ✅ | proposed |
+| `XM-MADRL` | ✅ | ✅ | ✅ | **proposed** |
 | `XM-noMAML` | ✅ | ✅ | ❌ | ablate meta-learning |
 | `XM-noGNN` | ✅ | ❌ | ✅ | ablate swarm communication |
 | `XM-noTrans` | ❌ | ✅ | ✅ | ablate transformer fusion |
 | `XM-noXAI` | ✅ | ✅ | ✅ | XAI is analysis-only (perf identical) |
 | `PPO`, `A2C` | — | — | — | on-policy baselines |
-| `DDPG`, `MADDPG` | — | — | — | off-policy baselines (real replay/target nets) |
+| `DDPG`, `MADDPG` | — | — | — | off-policy baselines (replay + target nets) |
+
+## Repository structure
+
+```
+.
+├── env/                 # multi-agent UAV-EW environment (NumPy)
+│   └── uav_swarm_env.py
+├── models/              # transformer fusion + GCN + actor-critic
+│   ├── policy.py
+│   └── gnn.py
+├── algos/               # MAPPO + MAML, and baseline trainers
+│   ├── mappo.py
+│   └── baselines.py
+├── xai/                 # SHAP explainability
+│   └── shap_explain.py
+├── configs/default.yaml # all hyperparameters
+├── train.py             # single-run training entry point
+├── signal_maml.py       # few-shot signal-classification (MAML)
+├── evaluate.py          # shared evaluation / metrics
+├── stats.py             # CI, Welch t-test, Cohen's d
+├── make_figures.py      # all figures + tables from logs
+├── run_parallel.py      # parallel launcher (recommended)
+└── run_all.sh           # sequential launcher
+```
 
 ## Datasets
 
 - **UAV navigation / EW scenarios** — generated by the built-in environment
   (GPS-denied navigation, adaptive jamming, spectrum congestion). No download.
-- **RadioML 2018.01A** — for the few-shot signal-classification experiment.
-  Place `GOLD_XYZ_OSC.0001_1024.hdf5` in `data/`
-  (https://www.deepsig.ai/datasets). If absent, a clearly-flagged **synthetic**
-  modulation dataset is used so the script still runs.
+- **RadioML 2018.01A** — for few-shot signal classification. Place
+  `GOLD_XYZ_OSC.0001_1024.hdf5` in `data/` (from
+  [DeepSig](https://www.deepsig.ai/datasets)). If absent, a clearly-flagged
+  **synthetic** modulation dataset is generated so the script still runs.
+
+## Performance
+
+The RL bottleneck is the single-threaded, CPU-bound environment rollout — **not**
+GPU compute, since the networks are tiny. Running many single-threaded jobs at
+once (one per core) is therefore much faster than one GPU job. On a 14-core CPU
+the full 5-seed study completes in a few hours.
 
 ## Reproducibility
 
-- 5 seeds `{11, 22, 33, 44, 55}`; metrics reported as mean ± SD.
-- 95% confidence intervals, Welch’s t-test and Cohen’s *d* (`stats.py`).
-- All hyperparameters in `configs/default.yaml`.
-- Reported hardware: single **NVIDIA RTX 4060**, PyTorch 2.x.
+- Seeds `{11, 22, 33, 44, 55}`; metrics as **mean ± SD**.
+- **95 % confidence intervals**, **Welch's t-test**, **Cohen's *d*** ([`stats.py`](stats.py)).
+- All hyperparameters in [`configs/default.yaml`](configs/default.yaml).
+- **Every number in the paper is generated from these logs — none are hand-entered.**
 
-## Note on results
+## Citation
 
-The paper’s tables and figures are generated **directly from the logs produced
-by these scripts** — there are no hand-entered numbers. Whatever the runs
-produce is what the paper reports.
+```bibtex
+@article{ahmad_xmmadrl_2026,
+  title   = {Adaptive Explainable Meta-Reinforcement Learning with Graph
+             Intelligence for Cognitive UAV Swarms in Electronic-Warfare Environments},
+  author  = {Ahmad, Adeel},
+  year    = {2026},
+  note    = {Code: https://github.com/adeliusa486/XM-MADRL-eXplainable-Meta-learning-Multi-Agent-DRL}
+}
+```
 
 ## License
 
-MIT — see `LICENSE`.
+Released under the [MIT License](LICENSE).
