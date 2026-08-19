@@ -59,13 +59,16 @@ def set_seed(seed: int):
         torch.cuda.manual_seed_all(seed)
 
 
+N_AGENTS = 8   # overridable via --n_agents (used by the scalability study)
+
+
 def build_env(seed: int) -> UAVSwarmEWEnv:
-    return UAVSwarmEWEnv(TaskConfig(seed=seed))
+    return UAVSwarmEWEnv(TaskConfig(seed=seed, n_agents=N_AGENTS))
 
 
 def train_onpolicy(method: str, seed: int, total_steps: int, device: str, out: Path,
                    log_every: int = 4096):
-    cfg_base = TaskConfig(seed=seed)
+    cfg_base = TaskConfig(seed=seed, n_agents=N_AGENTS)
     flags = PROPOSED.get(method, {})
     is_proposed = method in PROPOSED
     ppo_extra = ONPOLICY_BASELINES.get(method, {})
@@ -134,9 +137,12 @@ def main():
     ap.add_argument("--steps", type=int, default=300_000,
                     help="total environment steps (reduce for a quick test)")
     ap.add_argument("--results", default="results")
+    ap.add_argument("--n_agents", type=int, default=8, help="swarm size (scalability study)")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = ap.parse_args()
 
+    global N_AGENTS
+    N_AGENTS = args.n_agents
     set_seed(args.seed)
     out = Path(args.results); out.mkdir(parents=True, exist_ok=True)
     print(f"=== {args.method} seed={args.seed} steps={args.steps} device={args.device} ===",

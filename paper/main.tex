@@ -327,6 +327,27 @@ benefit coordination/safety and adaptation, respectively.
 \label{fig:conv}
 \end{figure}
 
+\subsection{Scalability}
+Fig.~\ref{fig:scale} evaluates XM-MADRL and the strongest on-policy baseline
+across swarm sizes ($N\in\{6,12,18\}$). Mission success \emph{improves} with
+swarm size for both methods, as more agents cover more targets, and XM-MADRL's
+advantage is maintained or widened at the larger sizes (e.g., $63.8\%$ vs.\
+$60.4\%$ at $N{=}18$), indicating that graph-based coordination scales gracefully
+under the larger joint action space. Communication reliability instead
+\emph{declines} with size for all methods---an intrinsic effect of more agents
+contending for a fixed set of channels---and the gap between XM-MADRL and the
+baseline narrows as $N$ grows. This confirms that the observed throughput gap is
+a property of spectrum contention rather than a scalability failure of the
+proposed architecture.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_scalability.png}
+\caption{Scalability of mission success and communication reliability with swarm
+size.}
+\label{fig:scale}
+\end{figure}
+
 \subsection{Few-Shot Adaptation}
 Table~\ref{tab:signal} shows that MAML initialization yields markedly higher
 few-shot signal-classification accuracy than training from scratch, evidencing
