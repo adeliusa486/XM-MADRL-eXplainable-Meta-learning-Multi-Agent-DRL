@@ -22,3 +22,8 @@ paper/*.log
 paper/c.log
 paper/compile*.log
 results_v1/
+tf/
+results_xm300k/
+run_600k.py
+run_scale_extra.py
+*.log

@@ -12,12 +12,11 @@ echo ">>> [2/6] SHAP explainability"
 W=$(ls results/XM-MADRL_seed*.pt 2>/dev/null | head -1)
 [ -n "$W" ] && python run_shap.py --weights "$W" --seed 11 --results results || true
 
-echo ">>> [3/6] figures"
-python make_figures.py --results results --out figures || true
-
-echo ">>> [4/6] copy figures into paper/"
+echo ">>> [3/6] professional figures"
 mkdir -p paper/figures
-cp -f figures/*.png paper/figures/ 2>/dev/null || true
+PYTHONPATH=paper python paper/pro_figures.py || true
+
+echo ">>> [4/6] (figures already written to paper/figures by pro_figures)"
 
 echo ">>> [5/6] LaTeX tables"
 python paper/gen_tables.py
