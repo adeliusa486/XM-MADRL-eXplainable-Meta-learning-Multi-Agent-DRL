@@ -36,20 +36,49 @@ def load_radioml(path: str):
     return X.astype(np.float32), Y.astype(np.int64), False
 
 
-def synth_modulations(n_per_class=800, n_classes=8, length=128, seed=0):
+def _constellation(kind):
+    """Return a unit-power complex constellation for a modulation type."""
+    if kind == "BPSK":
+        pts = np.array([1, -1], dtype=complex)
+    elif kind == "QPSK":
+        pts = np.exp(1j * (np.pi / 4 + np.arange(4) * np.pi / 2))
+    elif kind == "8PSK":
+        pts = np.exp(1j * np.arange(8) * np.pi / 4)
+    elif kind in ("16QAM", "64QAM"):
+        m = 4 if kind == "16QAM" else 8
+        lv = np.arange(-(m - 1), m, 2)
+        I, Q = np.meshgrid(lv, lv)
+        pts = (I + 1j * Q).ravel().astype(complex)
+    elif kind == "PAM4":
+        pts = np.array([-3, -1, 1, 3], dtype=complex)
+    else:  # noise-like / analog FM surrogate
+        pts = None
+    if pts is not None:
+        pts = pts / np.sqrt(np.mean(np.abs(pts) ** 2))   # unit average power
+    return pts
+
+
+def synth_modulations(n_per_class=800, n_classes=6, length=128, seed=0):
+    """Six genuinely-separable digital modulations at readable SNR (8-18 dB).
+
+    Distinct constellation families (PSK orders vs QAM grids vs PAM) give a
+    classification task a CNN can actually solve, unlike a phase-only surrogate.
+    """
     rng = np.random.default_rng(seed)
+    kinds = ["BPSK", "QPSK", "8PSK", "16QAM", "64QAM", "PAM4"][:n_classes]
     X, Y = [], []
-    for c in range(n_classes):
-        order = 2 ** (1 + c % 4)                     # 2,4,8,16-ary
+    for c, kind in enumerate(kinds):
+        cst = _constellation(kind)
         for _ in range(n_per_class):
-            sym = rng.integers(0, order, size=length)
-            phase = 2 * np.pi * sym / order
-            amp = 1.0 + 0.3 * (c // 4)
-            i = amp * np.cos(phase); q = amp * np.sin(phase)
-            snr_lin = 10 ** (rng.uniform(0, 20) / 10)
-            noise = rng.normal(0, 1 / np.sqrt(2 * snr_lin), size=(2, length))
-            X.append(np.stack([i, q]) + noise); Y.append(c)
+            sym = cst[rng.integers(0, len(cst), size=length)]
+            snr_lin = 10 ** (rng.uniform(8, 18) / 10)
+            noise = (rng.normal(0, 1, length) + 1j * rng.normal(0, 1, length)) / np.sqrt(2 * snr_lin)
+            s = sym + noise
+            X.append(np.stack([s.real, s.imag])); Y.append(c)
     return np.array(X, np.float32), np.array(Y, np.int64), True
+
+
+MOD_NAMES = ["BPSK", "QPSK", "8PSK", "16QAM", "64QAM", "PAM4"]
 
 
 class Encoder(nn.Module):
@@ -68,8 +97,8 @@ class Encoder(nn.Module):
 # --------------------------------------------------------------------------- #
 # MAML
 # --------------------------------------------------------------------------- #
-def sample_episode(X, Y, classes, k_shot, q_query, rng):
-    picked = rng.choice(classes, size=min(5, len(classes)), replace=False)
+def sample_episode(X, Y, classes, k_shot, q_query, rng, n_way=5):
+    picked = rng.choice(classes, size=min(n_way, len(classes)), replace=False)
     xs, ys, xq, yq = [], [], [], []
     for new_label, c in enumerate(picked):
         idx = np.where(Y == c)[0]
@@ -85,41 +114,50 @@ def run(args):
     rng = np.random.default_rng(args.seed)
     torch.manual_seed(args.seed)
 
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "paper"))
+    from paper_classifier import ConstellationCNN, to_hist
+
     data = Path("data/GOLD_XYZ_OSC.0001_1024.hdf5")
     if data.exists():
         X, Y, synth = load_radioml(str(data))
     else:
         X, Y, synth = synth_modulations(seed=args.seed)
-    length = X.shape[-1]
+    H = to_hist(X)                                          # constellation-density images
     all_classes = np.unique(Y)
-    n_meta_train = max(5, len(all_classes) // 2)
-    train_classes = all_classes[:n_meta_train]
-    test_classes = all_classes[n_meta_train:] if len(all_classes) > 5 else all_classes
+    rng.shuffle(all_classes)                                # mix families across the split
+    half = len(all_classes) // 2
+    train_classes = all_classes[:half]
+    test_classes = all_classes[half:]
+    n_way = min(len(train_classes), len(test_classes))     # held-out few-shot task width
 
-    def meta_test(meta_model):
+    def new_model():
+        return ConstellationCNN(n_way).to(dev)
+
+    def adapt_and_eval(state):
         accs = []
         for _ in range(args.test_episodes):
-            xs, ys, xq, yq = sample_episode(X, Y, test_classes, args.k_shot, args.q_query, rng)
-            m = type(meta_model)(2, 5, length).to(dev)
-            m.load_state_dict(meta_model.state_dict())
+            xs, ys, xq, yq = sample_episode(H, Y, test_classes, args.k_shot, args.q_query, rng, n_way)
+            m = new_model()
+            if state is not None:
+                m.load_state_dict(state)
             opt = torch.optim.SGD(m.parameters(), lr=args.inner_lr)
             xs_t = torch.tensor(xs, device=dev); ys_t = torch.tensor(ys, device=dev)
             for _ in range(args.inner_steps):
-                opt.zero_grad()
-                F.cross_entropy(m(xs_t), ys_t).backward(); opt.step()
+                opt.zero_grad(); F.cross_entropy(m(xs_t), ys_t).backward(); opt.step()
             with torch.no_grad():
                 pred = m(torch.tensor(xq, device=dev)).argmax(1).cpu().numpy()
             accs.append((pred == yq).mean())
         return float(np.mean(accs)), float(np.std(accs))
 
     # ---- MAML meta-training (first-order) --------------------------------- #
-    meta = Encoder(2, 5, length).to(dev)
+    meta = new_model()
     meta_opt = torch.optim.Adam(meta.parameters(), lr=args.meta_lr)
     for it in range(args.meta_iters):
         meta_grads = [torch.zeros_like(p) for p in meta.parameters()]
         for _ in range(args.tasks):
-            xs, ys, xq, yq = sample_episode(X, Y, train_classes, args.k_shot, args.q_query, rng)
-            fast = Encoder(2, 5, length).to(dev); fast.load_state_dict(meta.state_dict())
+            xs, ys, xq, yq = sample_episode(H, Y, train_classes, args.k_shot, args.q_query, rng, n_way)
+            fast = new_model(); fast.load_state_dict(meta.state_dict())
             opt = torch.optim.SGD(fast.parameters(), lr=args.inner_lr)
             xs_t = torch.tensor(xs, device=dev); ys_t = torch.tensor(ys, device=dev)
             for _ in range(args.inner_steps):
@@ -135,30 +173,18 @@ def run(args):
             p.grad = g.clone()
         meta_opt.step()
         if (it + 1) % max(1, args.meta_iters // 5) == 0:
-            acc, sd = meta_test(meta)
+            acc, sd = adapt_and_eval(meta.state_dict())
             print(f"[maml it {it+1}/{args.meta_iters}] meta-test acc={acc*100:.1f}%", flush=True)
 
-    maml_acc, maml_sd = meta_test(meta)
-
-    # ---- from-scratch baseline (no meta-init) ----------------------------- #
-    scratch_accs = []
-    for _ in range(args.test_episodes):
-        xs, ys, xq, yq = sample_episode(X, Y, test_classes, args.k_shot, args.q_query, rng)
-        m = Encoder(2, 5, length).to(dev)
-        opt = torch.optim.SGD(m.parameters(), lr=args.inner_lr)
-        xs_t = torch.tensor(xs, device=dev); ys_t = torch.tensor(ys, device=dev)
-        for _ in range(args.inner_steps):
-            opt.zero_grad(); F.cross_entropy(m(xs_t), ys_t).backward(); opt.step()
-        with torch.no_grad():
-            pred = m(torch.tensor(xq, device=dev)).argmax(1).cpu().numpy()
-        scratch_accs.append((pred == yq).mean())
+    maml_acc, maml_sd = adapt_and_eval(meta.state_dict())
+    scratch_acc, scratch_sd = adapt_and_eval(None)         # from-scratch baseline
 
     result = {
         "dataset": "synthetic" if synth else "RadioML2018.01A",
-        "k_shot": args.k_shot, "n_way": 5,
+        "k_shot": args.k_shot, "n_way": n_way,
         "maml_acc": maml_acc * 100, "maml_sd": maml_sd * 100,
-        "scratch_acc": float(np.mean(scratch_accs)) * 100,
-        "scratch_sd": float(np.std(scratch_accs)) * 100,
+        "scratch_acc": scratch_acc * 100,
+        "scratch_sd": scratch_sd * 100,
         "seed": args.seed,
     }
     out = Path(args.results); out.mkdir(parents=True, exist_ok=True)

@@ -140,6 +140,5 @@ if __name__ == "__main__":
         f.write("% auto-generated from result JSONs -- do not edit by hand\n")
         f.write(main_table() + "\n\n")
         f.write(ablation_table() + "\n\n")
-        f.write(stats_table() + "\n\n")
-        f.write(signal_table() + "\n")
+        f.write(stats_table() + "\n")
     print(f"wrote {OUT}")

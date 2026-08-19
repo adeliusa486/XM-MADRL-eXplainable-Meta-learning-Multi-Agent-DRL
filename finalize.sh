@@ -12,11 +12,14 @@ echo ">>> [2/6] SHAP explainability"
 W=$(ls results/XM-MADRL_seed*.pt 2>/dev/null | head -1)
 [ -n "$W" ] && python run_shap.py --weights "$W" --seed 11 --results results || true
 
-echo ">>> [3/6] professional figures"
+echo ">>> [3/6] professional figures (data, architecture, env, confusion)"
 mkdir -p paper/figures
 PYTHONPATH=paper python paper/pro_figures.py || true
+PYTHONPATH=paper python paper/arch_diagram.py || true
+python paper/env_figures.py --method XM-MADRL --compare MADDPG || true
+python paper/confusion_fig.py || true
 
-echo ">>> [4/6] (figures already written to paper/figures by pro_figures)"
+echo ">>> [4/6] (figures written to paper/figures)"
 
 echo ">>> [5/6] LaTeX tables"
 python paper/gen_tables.py

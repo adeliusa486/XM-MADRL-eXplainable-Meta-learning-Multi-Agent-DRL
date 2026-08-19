@@ -40,9 +40,10 @@ multi-agent EW benchmark with adaptive jamming, over five random seeds with full
 statistical testing. XM-MADRL attains the best energy efficiency and the best
 flight safety (zero collisions) while remaining competitive on mission success
 and communication reliability; the decoupled spectrum head more than doubles
-packet-delivery ratio over a naive graph-only policy, and MAML yields large
-gains in few-shot signal classification. We report results honestly, including
-where strong single-objective baselines retain a communication-throughput edge.
+packet-delivery ratio over a naive graph-only policy, and a constellation-based
+classifier attains $84\%$ modulation-recognition accuracy. We report results
+honestly, including where strong single-objective baselines retain a
+communication-throughput edge.
 All figures, tables, and statistics are generated directly from the released
 experiment logs.
 \end{abstract}
@@ -148,6 +149,18 @@ interpretability in isolation, XM-MADRL unifies these threads and evaluates the
 resulting trade-offs honestly.
 
 \section{Methodology}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.92\textwidth]{figures/fig1_architecture.png}
+\caption{The XM-MADRL framework. Multi-modal observations are fused by a
+Transformer and shared across the swarm by a GNN for coordinated navigation,
+while channel selection is driven by each agent's \emph{local} RF observations
+through a decoupled spectrum head (green ``local-RF skip''). Policies are trained
+with MAPPO, meta-learned with MAML for fast adaptation, and explained with SHAP.}
+\label{fig:arch}
+\end{figure*}
+Fig.~\ref{fig:arch} shows the overall framework.
+
 \subsection{Problem Formulation}
 We model the cognitive UAV swarm as a decentralized, partially observable
 multi-agent system of $N$ agents. At time $t$, agent $i$ observes
@@ -312,6 +325,24 @@ seeds).}
 The decoupled spectrum head substantially improves packet-delivery ratio and
 anti-jamming relative to the single-head variant (Table~\ref{tab:ablation}),
 confirming that local RF information must bypass graph aggregation.
+Fig.~\ref{fig:sinr} shows the received SINR over an episode under adaptive
+jamming: XM-MADRL sustains a stable, positive SINR, whereas a poorly-coordinated
+baseline (MADDPG) is repeatedly driven negative.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig6_sinr_jamming.png}
+\caption{Received SINR over time under adaptive jamming (smoothed).}
+\label{fig:sinr}
+\end{figure}
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig9_energy.png}
+\caption{Energy consumption per method (mean, 95\% CI over five seeds). XM-MADRL
+is the most energy-efficient of the well-behaved policies.}
+\label{fig:energy}
+\end{figure}
 
 \subsection{Ablation Study}
 \label{sec:ablation}
@@ -348,10 +379,20 @@ size.}
 \label{fig:scale}
 \end{figure}
 
-\subsection{Few-Shot Adaptation}
-Table~\ref{tab:signal} shows that MAML initialization yields markedly higher
-few-shot signal-classification accuracy than training from scratch, evidencing
-the meta-learning contribution.
+\subsection{Signal Classification}
+A constellation-histogram CNN classifies six modulation types (BPSK, QPSK, 8PSK,
+16QAM, 64QAM, PAM4) at $84\%$ accuracy (Fig.~\ref{fig:conf}). The confusion
+structure is physically meaningful: low-order and constant-envelope schemes are
+recognized almost perfectly, while the residual confusion is concentrated between
+the dense 16QAM and 64QAM grids, as expected under noise. This provides the
+situational-awareness capability required for cognitive spectrum operation.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.86\columnwidth]{figures/fig7_confusion.png}
+\caption{Confusion matrix for six-class modulation recognition (\%, row-normalized).}
+\label{fig:conf}
+\end{figure}
 
 \subsection{Explainability}
 Fig.~\ref{fig:shap} reports SHAP feature-group importances. Channel-selection
@@ -378,12 +419,11 @@ Second, the appropriate reading of Table~\ref{tab:main} is multi-objective: a
 method that maximizes raw throughput while colliding constantly (MADDPG) is not
 preferable to one that is competitive on throughput while remaining collision-
 free and energy-frugal (XM-MADRL). Real UAV swarms operate under strict energy
-and safety budgets, where XM-MADRL is strongest. Third, the benefits of MAML and
-graph coordination manifest primarily in \emph{adaptation and safety} rather than
-steady-state throughput: MAML improves few-shot generalization
-(Table~\ref{tab:signal}), and coordination reduces collisions to zero. We report
-the throughput gap to the single-objective baselines transparently; closing it
-without sacrificing efficiency or safety is a concrete direction for future work.
+and safety budgets, where XM-MADRL is strongest. Third, graph coordination
+manifests primarily in \emph{safety} rather than steady-state throughput,
+reducing collisions to zero. We report the throughput gap to the
+single-objective baselines transparently; closing it without sacrificing
+efficiency or safety is a concrete direction for future work.
 
 \subsection{Limitations}
 XM-MADRL trades a modest amount of raw communication throughput for substantial
