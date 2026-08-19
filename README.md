@@ -33,12 +33,25 @@ and coordinate — all while remaining **interpretable** for mission-critical us
 | 4 | Fast task adaptation | first-order **MAML** meta-training | [`algos/mappo.py`](algos/mappo.py) |
 | 5 | Explainability | **SHAP** feature-group attribution | [`xai/shap_explain.py`](xai/shap_explain.py) |
 
+**Key design insight (decoupled heads).** An ablation-driven finding of this work
+is that graph aggregation *over-smooths* the local spectrum-sensing signal each
+agent needs for channel selection. XM-MADRL therefore uses a **decoupled policy**:
+a coordinated navigation head (Transformer+GNN) and a **local-RF spectrum head**
+that bypasses the graph. This more than doubles packet-delivery ratio versus a
+naive graph-only policy ([`models/policy.py`](models/policy.py)).
+
 All methods are trained and evaluated in a fast, fully reproducible **NumPy
 multi-agent environment** ([`env/uav_swarm_env.py`](env/uav_swarm_env.py)) that
 models UAV kinematics, an SINR/PDR fading channel, an **adaptive jammer**,
 dynamic spectrum access, target detection and a multi-objective reward. It is
 intentionally lightweight — the entire study runs on a single laptop, no
 photorealistic simulator required.
+
+📄 **The compiled paper** (IEEE format, generated entirely from these logs) is at
+[`paper/main.pdf`](paper/main.pdf), with an editable copy at
+[`paper/XM-MADRL_paper.docx`](paper/XM-MADRL_paper.docx). All figures/tables are
+regenerated from real runs by [`finalize.sh`](finalize.sh) — no hand-entered
+numbers.
 
 ## Architecture
 

@@ -106,47 +106,99 @@ sacrificing coordination.
 release. Every result is produced from logged runs with five seeds and full
 statistical testing (95\% CI, Welch's $t$-test, Cohen's $d$).
 \item A comprehensive evaluation against PPO, A2C, DDPG, and MADDPG, an ablation
-study, a few-shot signal-classification study, and a SHAP-based interpretability
-analysis.
+study, a scalability analysis (6--18 agents), a modulation-recognition study, and
+a SHAP-based interpretability analysis.
 \end{enumerate}
 
 \section{Related Work}
-\textbf{Autonomous navigation and control.} Modular and hierarchical DRL improve
-scalability of UAV flight control~\cite{choi2023modular}, and feature-fusion PPO
-enables GPS-denied navigation~\cite{xu2023multiuav}. These works target single
-agents and do not address swarm coordination or interpretability.
+Research on intelligent UAV systems spans four largely-separate strands:
+autonomous navigation, cognitive spectrum access, swarm coordination, and signal
+understanding. We review each and position XM-MADRL against representative works,
+summarized in Table~\ref{tab:related}.
 
-\textbf{Cognitive spectrum access and anti-jamming.} Actor--critic DRL supports
-dynamic spectrum access~\cite{dong2022dynamic,wang2022usage}, hierarchical RL
-improves multichannel sensing~\cite{liu2021dynamic}, and multi-agent RL enables
-cooperative sensing and access~\cite{jiang2022multiagent}. Distributed
-actor--critic and waveform-design methods counter
-jamming~\cite{chen2022distributed,zheng2022airborne}, but typically assume
-simplified adversaries.
+\subsection{Autonomous Navigation and Control}
+Classical UAV control relies on model-based or rule-based designs that struggle
+with the nonlinear, uncertain, mission-dependent dynamics of real flight.
+DRL has therefore become central. Choi \emph{et al.}~\cite{choi2023modular}
+decompose flight control into modular sub-policies, improving scalability and
+training stability across operating regimes. Xu \emph{et al.}~\cite{xu2023multiuav}
+fuse raw sensor streams with visual features in a feature-fusion PPO controller
+that exceeds $90\%$ success in GPS-denied navigation, while Fu
+\emph{et al.}~\cite{fu2023deep} apply DRL to visual servoing under
+field-of-view constraints. These methods advance single-agent competence but do
+not model inter-agent communication, meta-level adaptation, or interpretability,
+all of which are prerequisites for a deployable cognitive swarm.
 
-\textbf{Swarm intelligence and mission planning.} DRL supports UAV-swarm task
-assignment~\cite{liu2023task} and multi-target reconnaissance~\cite{xu2023pursuing},
-while Q-learning addresses urban path planning~\cite{souto2023uav}. Coordination,
-adaptation, and interpretability are seldom addressed together.
+\subsection{Cognitive Spectrum Access and Anti-Jamming}
+Spectrum scarcity and adversarial interference make dynamic spectrum access (DSA)
+a core EW capability. Dong \emph{et al.}~\cite{dong2022dynamic} and Wang
+\emph{et al.}~\cite{wang2022usage} learn continuous DSA policies with
+actor--critic DRL, raising throughput without disrupting incumbents, and Liu
+\emph{et al.}~\cite{liu2021dynamic} use hierarchical RL for efficient
+multichannel sensing. For multiple UAVs, Jiang \emph{et al.}~\cite{jiang2022multiagent}
+show that decentralized multi-agent RL approaches centralized performance for
+cooperative sensing and access. On the adversarial side, Chen
+\emph{et al.}~\cite{chen2022distributed} propose a distributed actor--critic
+anti-jamming scheme, and Zheng \emph{et al.}~\cite{zheng2022airborne} design
+anti-jamming radar waveforms with DRL. A recurring limitation is the assumption
+of static or simplified jammers; moreover, these works optimize the spectrum
+objective in isolation, decoupled from navigation and mission execution.
 
-\textbf{Signal identification and communication.} Few-shot learning enables
-radar-emitter identification with limited labels~\cite{wu2023irelnet}, and deep
-models improve channel estimation~\cite{algburi2022channel} and UAV
-detection~\cite{dewangan2023application}. Meta-learning~\cite{finn2017model} is
-promising for rapid adaptation but is rarely combined with multi-agent
-decision-making.
+\subsection{Swarm Intelligence and Mission Planning}
+Coordinating a UAV swarm introduces scalability and non-stationarity challenges.
+Liu \emph{et al.}~\cite{liu2023task} extend multi-agent deterministic policy
+gradients with local communication for swarm task assignment, and Xu
+\emph{et al.}~\cite{xu2023pursuing} address multi-target electronic
+reconnaissance under threat. Souto \emph{et al.}~\cite{souto2023uav} plan
+energy-efficient urban paths with Q-learning, though tabular methods scale poorly
+in high-dimensional state spaces. Hieu \emph{et al.}~\cite{hieu2022transferable}
+study transferable policies for joint radar-communication, motivating
+meta-learning, but do not integrate it into cooperative swarm control.
+Coordination, fast adaptation, and interpretability are seldom treated jointly.
 
-\textbf{Learning components.} Our design draws on established building blocks:
-the Transformer~\cite{vaswani2017attention} for attention-based multi-modal
-fusion, graph convolutional networks~\cite{kipf2017semi} for message passing over
-the swarm, MAPPO~\cite{yu2022surprising} as a strong cooperative on-policy
-learner, MAML~\cite{finn2017model} for fast adaptation, and
-SHAP~\cite{lundberg2017unified} for post-hoc attribution. Our contribution is not
-these components individually but their integration, together with the
-observation that graph aggregation and local spectrum sensing must be decoupled.
-In contrast to prior work that studies coordination, adaptation, or
-interpretability in isolation, XM-MADRL unifies these threads and evaluates the
-resulting trade-offs honestly.
+\subsection{Signal Identification and Communication}
+Situational awareness in EW depends on recognizing emissions from few samples.
+Wu \emph{et al.}~\cite{wu2023irelnet} improve few-shot radar-emitter
+identification with a relation network; O'Shea \emph{et al.}~\cite{oshea2018over}
+established deep modulation recognition on over-the-air data. Deep models also
+improve UAV channel estimation~\cite{algburi2022channel} and small-UAV
+detection~\cite{dewangan2023application}, while energy-optimization surveys
+highlight efficiency as a first-class concern~\cite{abubakar2023survey}.
+Meta-learning~\cite{finn2017model} is promising for rapid adaptation but is rarely
+coupled to multi-agent decision-making.
+
+\subsection{Positioning of XM-MADRL}
+Our design draws on established building blocks---the
+Transformer~\cite{vaswani2017attention} for multi-modal fusion, graph
+convolutional networks~\cite{kipf2017semi} for swarm message passing,
+MAPPO~\cite{yu2022surprising} for cooperative learning, MAML~\cite{finn2017model}
+for adaptation, and SHAP~\cite{lundberg2017unified} for attribution. The
+contribution is not these components individually but (i) their integration into
+a single cognitive-swarm controller, and (ii) the empirical finding, absent from
+prior work, that graph aggregation \emph{over-smooths} the local spectrum-sensing
+signal, which we resolve with a decoupled navigation/spectrum policy. As
+Table~\ref{tab:related} shows, prior methods each address a subset of
+coordination, adaptation, robustness, and interpretability; XM-MADRL is the first
+to address all four jointly and to report the resulting trade-offs transparently.
+
+\begin{table*}[!t]
+\centering
+\caption{Positioning of XM-MADRL against representative DRL-based UAV methods.
+(\checkmark: addressed; --: not addressed.)}
+\label{tab:related}
+\begin{tabular}{lccccc}
+\hline
+Method & Multi-agent & Adaptation & Anti-jam & Interpretable & Reproducible code \\ \hline
+Modular RL~\cite{choi2023modular} & -- & -- & -- & -- & -- \\
+Feature-fusion PPO~\cite{xu2023multiuav} & -- & -- & -- & -- & -- \\
+Actor--critic DSA~\cite{dong2022dynamic} & -- & -- & \checkmark & -- & -- \\
+MARL sensing~\cite{jiang2022multiagent} & \checkmark & -- & \checkmark & -- & -- \\
+Distributed anti-jam~\cite{chen2022distributed} & \checkmark & -- & \checkmark & -- & -- \\
+Swarm task assign.~\cite{liu2023task} & \checkmark & -- & -- & -- & -- \\
+Transferable DRL~\cite{hieu2022transferable} & -- & \checkmark & -- & -- & -- \\
+\textbf{XM-MADRL (ours)} & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\ \hline
+\end{tabular}
+\end{table*}
 
 \section{Methodology}
 \begin{figure*}[!t]
@@ -262,18 +314,30 @@ is analysis-only and does not affect training, which is why removing it leaves
 task performance unchanged while eliminating decision transparency.
 
 \section{Experimental Setup}
-\textbf{Environment.} A reproducible NumPy multi-agent EW simulator models UAV
-kinematics, an SINR/PDR fading channel, an adaptive (sweep) jammer, dynamic
-spectrum access, target detection, and the reward of Eq.~\eqref{eq:reward}, with
-$N{=}8$ UAVs, $C{=}6$ channels, and a $1000\times1000$\,m arena.
+\textbf{Environment.} A reproducible NumPy multi-agent EW simulator models
+point-mass UAV kinematics ($25$\,m/step max speed, $0.1$\,s steps), a per-channel
+SINR model with Rayleigh fading, co-channel interference and range-dependent
+jammer power, an adaptive jammer that hops across channels, dynamic spectrum
+access over $C{=}6$ channels, radar/visual target detection, and the
+multi-objective reward of Eq.~\eqref{eq:reward}. The arena is
+$1000\times1000$\,m with $N{=}8$ UAVs and up to four targets and two jammers;
+episodes last up to $300$ steps. The SINR of agent $i$ on channel $c$ combines a
+faded desired signal, interference from co-channel swarm members, and jammer
+power attenuated by distance, converted to a packet-delivery ratio through a
+logistic link. The environment supports variable swarm size for the scalability
+study (Section~\ref{sec:ablation}). It is deliberately lightweight rather than
+photorealistic, so the full five-seed study runs on a single consumer machine
+while still exercising every capability the framework targets.
 
 \textbf{Baselines.} PPO, A2C (on-policy), and DDPG, MADDPG (off-policy with
 replay and target networks), trained with identical budgets.
 
-\textbf{Protocol.} Each method is trained for $3\times10^5$ steps and evaluated
-over 30 held-out episodes. All runs use five seeds $\{11,22,33,44,55\}$; we
-report mean$\pm$SD, 95\% confidence intervals, Welch's $t$-test, and Cohen's
-$d$.
+\textbf{Protocol.} For a fair comparison, \emph{every} method---the proposed
+framework and all baselines---is trained for the same budget of $6\times10^5$
+environment steps and evaluated over 30 held-out episodes. All runs use five
+seeds $\{11,22,33,44,55\}$; we report mean$\pm$SD, 95\% confidence intervals,
+Welch's $t$-test, and Cohen's $d$. Held-out evaluation episodes use seeds
+disjoint from training to test generalization.
 
 \textbf{Implementation.} PyTorch; experiments on a single NVIDIA RTX~4060.
 Key hyperparameters are listed in Table~\ref{tab:hyper}; the full configuration
@@ -459,6 +523,20 @@ dynamics, is a simulation and not a photorealistic or hardware-in-the-loop
 testbed, and the meta-learning component's empirical benefit is confined to
 adaptation rather than steady-state performance. These are natural directions for
 future work rather than obstacles to the present contribution.
+
+\subsection{Threats to Validity}
+\emph{Internal validity:} to avoid an unfair-budget confound, every method is
+trained for an identical $6\times10^5$-step budget and evaluated on held-out
+seeds; results are averaged over five seeds with confidence intervals and
+significance tests, and all numbers are regenerated directly from logged runs,
+eliminating manual-transcription error. \emph{Construct validity:} the metrics
+(mission success, PDR, SINR, anti-jamming, energy, collisions) jointly capture
+the multi-objective nature of the task rather than a single proxy, and the
+strongest baseline is used for pairwise significance testing. \emph{External
+validity:} the environment is a simulation; while it models the salient EW
+dynamics (fading, adaptive jamming, spectrum contention, GPS-denied navigation),
+transfer to hardware is left to future work. \emph{Reproducibility:} code,
+configurations, seeds, and logs are released publicly.
 
 \section{Conclusion}
 We presented XM-MADRL, a unified explainable meta-learning framework with graph
