@@ -75,6 +75,18 @@ mission-critical operations~\cite{lundberg2017unified}. Crucially, these are
 usually studied in isolation, whereas a deployable cognitive UAV swarm must
 satisfy them \emph{jointly}.
 
+Addressing these challenges jointly is non-trivial because the underlying
+objectives interact and even conflict: aggressive spectrum exploration improves
+throughput but drains energy; tight formation aids coordination but raises
+collision risk; and larger, more expressive models improve capacity but are
+harder to train and to interpret. A practical framework must therefore expose
+these trade-offs explicitly rather than optimize a single proxy. A further,
+subtler difficulty---which we identify and resolve in this work---is that the
+very mechanism used for swarm coordination (graph message passing) can degrade a
+capability it is not meant to touch: local spectrum sensing. We show that naive
+graph aggregation \emph{over-smooths} the per-agent radio-frequency (RF) features
+required for channel selection, and that a decoupled policy resolves this.
+
 \textbf{Contributions.} We propose \emph{XM-MADRL}, an eXplainable
 Meta-learning Multi-Agent DRL framework that addresses these challenges in a
 single design, and make the following contributions:
@@ -121,7 +133,19 @@ radar-emitter identification with limited labels~\cite{wu2023irelnet}, and deep
 models improve channel estimation~\cite{algburi2022channel} and UAV
 detection~\cite{dewangan2023application}. Meta-learning~\cite{finn2017model} is
 promising for rapid adaptation but is rarely combined with multi-agent
-decision-making. XM-MADRL unifies these threads.
+decision-making.
+
+\textbf{Learning components.} Our design draws on established building blocks:
+the Transformer~\cite{vaswani2017attention} for attention-based multi-modal
+fusion, graph convolutional networks~\cite{kipf2017semi} for message passing over
+the swarm, MAPPO~\cite{yu2022surprising} as a strong cooperative on-policy
+learner, MAML~\cite{finn2017model} for fast adaptation, and
+SHAP~\cite{lundberg2017unified} for post-hoc attribution. Our contribution is not
+these components individually but their integration, together with the
+observation that graph aggregation and local spectrum sensing must be decoupled.
+In contrast to prior work that studies coordination, adaptation, or
+interpretability in isolation, XM-MADRL unifies these threads and evaluates the
+resulting trade-offs honestly.
 
 \section{Methodology}
 \subsection{Problem Formulation}
@@ -323,6 +347,22 @@ providing transparent, auditable rationale for autonomous actions.
 \subsection{Statistical Significance}
 Table~\ref{tab:stats} reports Welch's $t$-tests and Cohen's $d$ against the
 strongest baseline, computed from real per-seed distributions.
+
+\subsection{Discussion}
+Three points merit emphasis. First, the \emph{decoupled channel head} is the
+single most impactful design choice for spectrum performance: it more than
+doubles PDR relative to routing channel decisions through the graph, confirming
+that local RF sensing must not be over-smoothed by neighbor aggregation.
+Second, the appropriate reading of Table~\ref{tab:main} is multi-objective: a
+method that maximizes raw throughput while colliding constantly (MADDPG) is not
+preferable to one that is competitive on throughput while remaining collision-
+free and energy-frugal (XM-MADRL). Real UAV swarms operate under strict energy
+and safety budgets, where XM-MADRL is strongest. Third, the benefits of MAML and
+graph coordination manifest primarily in \emph{adaptation and safety} rather than
+steady-state throughput: MAML improves few-shot generalization
+(Table~\ref{tab:signal}), and coordination reduces collisions to zero. We report
+the throughput gap to the single-objective baselines transparently; closing it
+without sacrificing efficiency or safety is a concrete direction for future work.
 
 \subsection{Limitations}
 XM-MADRL trades a modest amount of raw communication throughput for substantial
