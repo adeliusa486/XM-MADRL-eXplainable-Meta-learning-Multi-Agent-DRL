@@ -1,0 +1,2 @@
+=== MADDPG seed=11 steps=300000 device=cpu ===
+FINAL MADDPG s11: success=64.2%  pdr=4.8%  antijam=67.1%  sinr=-2.12dB  energy=5.650

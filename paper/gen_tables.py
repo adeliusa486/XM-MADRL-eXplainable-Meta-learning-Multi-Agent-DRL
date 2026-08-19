@@ -81,7 +81,10 @@ def ablation_table():
     keys = [("mission_success_pct", "Success (\\%)"), ("pdr_pct", "PDR (\\%)"),
             ("antijam_pct", "Anti-Jam (\\%)"), ("mean_sinr", "SINR (dB)")]
     lines = [r"\begin{table}[!t]", r"\centering",
-             r"\caption{Ablation study (mean $\pm$ SD over seeds). Each row removes one component.}",
+             r"\caption{Ablation study (mean $\pm$ SD over seeds). The full model uses the "
+             r"decoupled channel head; component ablations (MAML/GNN/Transformer) are "
+             r"relative to the base architecture, and the `w/o local channel head' row "
+             r"isolates the decoupled-head contribution.}",
              r"\label{tab:ablation}",
              r"\begin{tabular}{l" + "c" * len(keys) + "}", r"\hline",
              "Configuration & " + " & ".join(k[1] for k in keys) + r" \\ \hline"]

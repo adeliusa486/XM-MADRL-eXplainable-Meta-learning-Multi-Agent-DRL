@@ -1,0 +1,6 @@
+[maml it 40/200] meta-test acc=33.7%
+[maml it 80/200] meta-test acc=33.3%
+[maml it 120/200] meta-test acc=34.4%
+[maml it 160/200] meta-test acc=33.2%
+[maml it 200/200] meta-test acc=33.1%
+RESULT {"dataset": "synthetic", "k_shot": 5, "n_way": 5, "maml_acc": 33.84444444444445, "maml_sd": 4.071642371935222, "scratch_acc": 30.177777777777777, "scratch_sd": 9.2439102409754, "seed": 55}

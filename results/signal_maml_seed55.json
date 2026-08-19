@@ -1,0 +1,10 @@
+{
+  "dataset": "synthetic",
+  "k_shot": 5,
+  "n_way": 5,
+  "maml_acc": 33.84444444444445,
+  "maml_sd": 4.071642371935222,
+  "scratch_acc": 30.177777777777777,
+  "scratch_sd": 9.2439102409754,
+  "seed": 55
+}

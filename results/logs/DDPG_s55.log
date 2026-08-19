@@ -1,0 +1,2 @@
+=== DDPG seed=55 steps=300000 device=cpu ===
+FINAL DDPG s55: success=34.2%  pdr=56.6%  antijam=96.8%  sinr=3.72dB  energy=1.692

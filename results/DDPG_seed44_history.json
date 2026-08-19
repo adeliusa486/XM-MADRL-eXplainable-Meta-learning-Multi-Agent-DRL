@@ -1,0 +1,294 @@
+[
+  {
+    "step": 4096,
+    "mission_success": 0.34615384615384615
+  },
+  {
+    "step": 8192,
+    "mission_success": 0.475
+  },
+  {
+    "step": 12288,
+    "mission_success": 0.45
+  },
+  {
+    "step": 16384,
+    "mission_success": 0.4
+  },
+  {
+    "step": 20480,
+    "mission_success": 0.4125
+  },
+  {
+    "step": 24576,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 28672,
+    "mission_success": 0.2875
+  },
+  {
+    "step": 32768,
+    "mission_success": 0.425
+  },
+  {
+    "step": 36864,
+    "mission_success": 0.4
+  },
+  {
+    "step": 40960,
+    "mission_success": 0.35
+  },
+  {
+    "step": 45056,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 49152,
+    "mission_success": 0.375
+  },
+  {
+    "step": 53248,
+    "mission_success": 0.4625
+  },
+  {
+    "step": 57344,
+    "mission_success": 0.525
+  },
+  {
+    "step": 61440,
+    "mission_success": 0.4625
+  },
+  {
+    "step": 65536,
+    "mission_success": 0.4
+  },
+  {
+    "step": 69632,
+    "mission_success": 0.4
+  },
+  {
+    "step": 73728,
+    "mission_success": 0.425
+  },
+  {
+    "step": 77824,
+    "mission_success": 0.4
+  },
+  {
+    "step": 81920,
+    "mission_success": 0.3125
+  },
+  {
+    "step": 86016,
+    "mission_success": 0.2875
+  },
+  {
+    "step": 90112,
+    "mission_success": 0.2625
+  },
+  {
+    "step": 94208,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 98304,
+    "mission_success": 0.35
+  },
+  {
+    "step": 102400,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 106496,
+    "mission_success": 0.325
+  },
+  {
+    "step": 110592,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 114688,
+    "mission_success": 0.4375
+  },
+  {
+    "step": 118784,
+    "mission_success": 0.425
+  },
+  {
+    "step": 122880,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 126976,
+    "mission_success": 0.35
+  },
+  {
+    "step": 131072,
+    "mission_success": 0.4625
+  },
+  {
+    "step": 135168,
+    "mission_success": 0.35
+  },
+  {
+    "step": 139264,
+    "mission_success": 0.375
+  },
+  {
+    "step": 143360,
+    "mission_success": 0.4125
+  },
+  {
+    "step": 147456,
+    "mission_success": 0.3125
+  },
+  {
+    "step": 151552,
+    "mission_success": 0.35
+  },
+  {
+    "step": 155648,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 159744,
+    "mission_success": 0.3375
+  },
+  {
+    "step": 163840,
+    "mission_success": 0.35
+  },
+  {
+    "step": 167936,
+    "mission_success": 0.325
+  },
+  {
+    "step": 172032,
+    "mission_success": 0.4
+  },
+  {
+    "step": 176128,
+    "mission_success": 0.3
+  },
+  {
+    "step": 180224,
+    "mission_success": 0.2625
+  },
+  {
+    "step": 184320,
+    "mission_success": 0.3125
+  },
+  {
+    "step": 188416,
+    "mission_success": 0.35
+  },
+  {
+    "step": 192512,
+    "mission_success": 0.25
+  },
+  {
+    "step": 196608,
+    "mission_success": 0.3125
+  },
+  {
+    "step": 200704,
+    "mission_success": 0.3375
+  },
+  {
+    "step": 204800,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 208896,
+    "mission_success": 0.425
+  },
+  {
+    "step": 212992,
+    "mission_success": 0.45
+  },
+  {
+    "step": 217088,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 221184,
+    "mission_success": 0.3375
+  },
+  {
+    "step": 225280,
+    "mission_success": 0.375
+  },
+  {
+    "step": 229376,
+    "mission_success": 0.325
+  },
+  {
+    "step": 233472,
+    "mission_success": 0.375
+  },
+  {
+    "step": 237568,
+    "mission_success": 0.25
+  },
+  {
+    "step": 241664,
+    "mission_success": 0.35
+  },
+  {
+    "step": 245760,
+    "mission_success": 0.4
+  },
+  {
+    "step": 249856,
+    "mission_success": 0.3
+  },
+  {
+    "step": 253952,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 258048,
+    "mission_success": 0.45
+  },
+  {
+    "step": 262144,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 266240,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 270336,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 274432,
+    "mission_success": 0.4125
+  },
+  {
+    "step": 278528,
+    "mission_success": 0.4875
+  },
+  {
+    "step": 282624,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 286720,
+    "mission_success": 0.3
+  },
+  {
+    "step": 290816,
+    "mission_success": 0.25
+  },
+  {
+    "step": 294912,
+    "mission_success": 0.2
+  },
+  {
+    "step": 299008,
+    "mission_success": 0.3625
+  }
+]
