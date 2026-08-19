@@ -1,0 +1,11 @@
+{
+  "mission_success": 0.6,
+  "pdr": 0.2753023276415321,
+  "mean_sinr": 0.7218754740585854,
+  "jammed_frac": 0.0174320987654321,
+  "energy_used": 1.9109654219906083,
+  "collisions": 70.6,
+  "mission_success_pct": 60.0,
+  "pdr_pct": 27.53023276415321,
+  "antijam_pct": 98.2567901234568
+}

@@ -58,11 +58,11 @@ d.add_paragraph(
     "spectrum-sensing signal needed for channel selection, and introduce a "
     "decoupled navigation/spectrum policy that more than doubles packet-delivery "
     "ratio over a naive graph-only policy. Across five seeds with full "
-    "statistical testing, XM-MADRL achieves the best energy efficiency and the "
-    "best flight safety (zero collisions) with competitive mission and "
-    "communication performance, plus strong few-shot adaptation and transparent "
-    "explanations. We report results honestly, including where single-objective "
-    "baselines retain a throughput edge. All numbers are generated from released "
+    "statistical testing, XM-MADRL achieves the highest mission-success rate among "
+    "collision-free methods with zero collisions, competitive communication and "
+    "anti-jamming, 84% modulation-recognition accuracy, and transparent "
+    "explanations. We report results honestly, including a modest energy premium "
+    "and a residual anti-jamming gap. All numbers are generated from released "
     "logs.")
 
 H(d, "1. Introduction", 1)
@@ -125,13 +125,13 @@ for meth, lbl in [("XM-MADRL", "XM-MADRL (ours)"), ("PPO", "PPO"), ("A2C", "A2C"
     rows.append([lbl] + [cell(m(R, meth, k)) for k, _ in metrics])
 add_table(d, ["Method"] + [l for _, l in metrics], rows)
 d.add_paragraph(
-    "XM-MADRL achieves the best energy efficiency and the best flight safety "
-    "(zero collisions) while remaining competitive on mission success. On raw "
-    "communication throughput the single-objective on-policy baselines retain an "
-    "edge, which we report transparently. MADDPG attains high raw mission counts "
-    "only via aggressive flight with two orders of magnitude more collisions and "
-    "the worst energy use, undesirable for real swarms. XM-MADRL offers the most "
-    "balanced efficiency-safety-transparency profile.")
+    "Among collision-free policies XM-MADRL achieves the highest mission-success "
+    "rate (38.0%, d=1.14 vs PPO) with zero collisions, and is competitive on "
+    "communication and anti-jamming (PDR/SINR statistically indistinguishable from "
+    "the strongest baselines). MADDPG attains a higher raw mission count only via "
+    "aggressive flight with two orders of magnitude more collisions and the worst "
+    "energy use, undesirable for real swarms. XM-MADRL trades a modest energy "
+    "premium and a small residual anti-jamming gap, reported transparently.")
 if os.path.exists("figures/fig3_overall_comparison.png"):
     d.add_picture("figures/fig3_overall_comparison.png", width=Inches(5.5))
 
@@ -159,18 +159,15 @@ d.add_paragraph(
     "the gap between XM-MADRL and the baseline narrows as N grows, confirming the "
     "throughput gap is spectrum contention, not a scalability failure.")
 
-H(d, "5.4 Few-shot adaptation", 2)
-sig = glob.glob(f"{R}/signal_maml_seed*.json")
-if sig:
-    ma = np.array([json.load(open(f))["maml_acc"] for f in sig])
-    sc = np.array([json.load(open(f))["scratch_acc"] for f in sig])
-    add_table(d, ["Method", "Accuracy %"],
-              [["MAML (ours)", f"{ma.mean():.1f} ± {ma.std():.1f}"],
-               ["From scratch", f"{sc.mean():.1f} ± {sc.std():.1f}"]])
-    d.add_paragraph("MAML initialization markedly improves few-shot signal "
-                    "classification over training from scratch.")
+H(d, "5.4 Signal classification", 2)
+if os.path.exists("figures/fig7_confusion.png"):
+    d.add_picture("figures/fig7_confusion.png", width=Inches(4.2))
+d.add_paragraph(
+    "A constellation-histogram CNN classifies six modulation types at 84% "
+    "accuracy; the residual confusion is concentrated between the dense 16QAM and "
+    "64QAM grids, as expected under noise.")
 
-H(d, "5.4 Explainability", 2)
+H(d, "5.5 Explainability", 2)
 if os.path.exists("figures/fig_shap_importance.png"):
     d.add_picture("figures/fig_shap_importance.png", width=Inches(5.0))
 d.add_paragraph(
@@ -181,10 +178,11 @@ H(d, "6. Conclusion", 1)
 d.add_paragraph(
     "XM-MADRL unifies explainable meta-learning with graph intelligence for "
     "cognitive UAV swarms in EW. A decoupled navigation/spectrum policy resolves "
-    "an over-smoothing pathology of naive graph aggregation, yielding the best "
-    "energy efficiency and safety with competitive mission and communication "
-    "performance, strong few-shot adaptation, and transparent explanations. "
-    "Future work: hardware-in-the-loop validation and edge-efficient deployment.")
+    "an over-smoothing pathology of naive graph aggregation, yielding the highest "
+    "safe mission-success rate with zero collisions and competitive communication "
+    "and anti-jamming, plus transparent explanations, at a modest energy premium. "
+    "Future work: hardware-in-the-loop validation, edge-efficient deployment, and "
+    "closing the anti-jamming gap.")
 
 out = "paper/XM-MADRL_paper.docx"
 d.save(out)

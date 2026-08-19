@@ -37,13 +37,13 @@ needs for channel selection; we therefore \emph{decouple} the policy into a
 coordinated navigation head and a local spectrum head. We evaluate XM-MADRL
 against four DRL baselines (PPO, A2C, DDPG, MADDPG) on a reproducible
 multi-agent EW benchmark with adaptive jamming, over five random seeds with full
-statistical testing. XM-MADRL attains the best energy efficiency and the best
-flight safety (zero collisions) while remaining competitive on mission success
-and communication reliability; the decoupled spectrum head more than doubles
-packet-delivery ratio over a naive graph-only policy, and a constellation-based
-classifier attains $84\%$ modulation-recognition accuracy. We report results
-honestly, including where strong single-objective baselines retain a
-communication-throughput edge.
+statistical testing. XM-MADRL attains the highest mission-success rate
+among collision-free methods together with zero collisions, while remaining
+competitive on communication reliability and anti-jamming; the decoupled spectrum
+head more than doubles packet-delivery ratio over a naive graph-only policy, and
+a constellation-based classifier attains $84\%$ modulation-recognition accuracy.
+We report results honestly, including a modest energy premium and a residual
+anti-jamming gap relative to strong single-objective baselines.
 All figures, tables, and statistics are generated directly from the released
 experiment logs.
 \end{abstract}
@@ -303,15 +303,16 @@ Seeds & \{11,22,33,44,55\} \\ \hline
 
 \subsection{Overall Performance}
 Table~\ref{tab:main} and Fig.~\ref{fig:overall} summarize the comparison.
-XM-MADRL achieves the best energy efficiency and the best flight safety
-(zero collisions) while remaining competitive on mission success (statistically
-indistinguishable from PPO and DDPG). On raw communication throughput, the
-single-objective on-policy baselines retain an edge (higher PDR/SINR); we report
-this transparently rather than tuning it away. The off-policy MADDPG baseline
-attains high raw mission counts only by flying aggressively, incurring two
-orders of magnitude more collisions and the worst energy use, which is
-unacceptable for real swarms. XM-MADRL thus offers the most balanced
-efficiency--safety--transparency profile.
+Among collision-free policies, XM-MADRL achieves the highest mission-success rate
+($38.0\%$, effect size $d{=}1.14$ vs.\ PPO) with zero collisions, and is
+competitive on communication reliability and anti-jamming: after sufficient
+training its PDR and SINR are statistically indistinguishable from the strongest
+baselines (Table~\ref{tab:stats}), in contrast to the large deficits of a
+naive graph-only policy. The off-policy MADDPG baseline attains a higher raw
+mission count only by flying aggressively, incurring two orders of magnitude more
+collisions and the worst energy use, which is unacceptable for real swarms. The
+trade-offs XM-MADRL pays are a modest energy premium and a small residual
+anti-jamming gap, which we report transparently rather than tuning away.
 
 \begin{figure}[!t]
 \centering
@@ -319,6 +320,20 @@ efficiency--safety--transparency profile.
 \caption{Overall performance comparison across methods (mean $\pm$ SD over five
 seeds).}
 \label{fig:overall}
+\end{figure}
+
+\subsection{Navigation and Coordination}
+Fig.~\ref{fig:traj} visualizes a representative episode: the swarm executes
+compact, collision-free maneuvers toward the targets while keeping clear of the
+central jammer, consistent with the zero-collision statistics in
+Table~\ref{tab:main}.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.82\columnwidth]{figures/fig4_trajectory.png}
+\caption{Trajectories of the XM-MADRL swarm over one episode (circles: start,
+squares: end; stars: targets; crosses: jammers).}
+\label{fig:traj}
 \end{figure}
 
 \subsection{Communication and Anti-Jamming}
@@ -340,16 +355,25 @@ baseline (MADDPG) is repeatedly driven negative.
 \centering
 \includegraphics[width=\columnwidth]{figures/fig9_energy.png}
 \caption{Energy consumption per method (mean, 95\% CI over five seeds). XM-MADRL
-is the most energy-efficient of the well-behaved policies.}
+uses far less energy than the reckless MADDPG baseline, at a modest premium over
+the lightest on-policy methods.}
 \label{fig:energy}
 \end{figure}
 
 \subsection{Ablation Study}
 \label{sec:ablation}
-Table~\ref{tab:ablation} isolates each component. Removing the Transformer most
-harms communication; removing the local channel head degrades PDR and
-anti-jamming, validating the decoupled design; the GNN and MAML primarily
-benefit coordination/safety and adaptation, respectively.
+Table~\ref{tab:ablation} and Fig.~\ref{fig:abl} isolate each component. Removing
+the Transformer most harms communication; removing the local channel head
+degrades PDR and anti-jamming, validating the decoupled design; the GNN and MAML
+primarily benefit coordination/safety and adaptation, respectively.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig10_ablation.png}
+\caption{Ablation: effect of removing each component on success, PDR, and
+anti-jamming.}
+\label{fig:abl}
+\end{figure}
 
 \begin{figure}[!t]
 \centering
@@ -416,31 +440,35 @@ single most impactful design choice for spectrum performance: it more than
 doubles PDR relative to routing channel decisions through the graph, confirming
 that local RF sensing must not be over-smoothed by neighbor aggregation.
 Second, the appropriate reading of Table~\ref{tab:main} is multi-objective: a
-method that maximizes raw throughput while colliding constantly (MADDPG) is not
-preferable to one that is competitive on throughput while remaining collision-
-free and energy-frugal (XM-MADRL). Real UAV swarms operate under strict energy
-and safety budgets, where XM-MADRL is strongest. Third, graph coordination
+method that maximizes raw mission count while colliding constantly (MADDPG,
+$245$ collisions) is not preferable to one that leads mission success among
+collision-free policies while remaining competitive on communication (XM-MADRL).
+Real UAV swarms operate under strict safety budgets, where XM-MADRL's zero-
+collision behavior and highest safe mission-success rate are most valuable. Third, graph coordination
 manifests primarily in \emph{safety} rather than steady-state throughput,
 reducing collisions to zero. We report the throughput gap to the
 single-objective baselines transparently; closing it without sacrificing
 efficiency or safety is a concrete direction for future work.
 
 \subsection{Limitations}
-XM-MADRL trades a modest amount of raw communication throughput for substantial
-gains in energy efficiency, safety, interpretability, and adaptability: strong
-single-objective baselines still achieve higher PDR/SINR on this benchmark. The
-environment, while capturing the salient EW dynamics, is a simulation and not a
-photorealistic or hardware-in-the-loop testbed. These are natural directions for
+XM-MADRL pays two transparent costs for its safety and mission-success gains: a
+modest energy premium (it expends more energy than the lightest baselines while
+covering more targets) and a small residual anti-jamming gap
+(Table~\ref{tab:stats}). The environment, while capturing the salient EW
+dynamics, is a simulation and not a photorealistic or hardware-in-the-loop
+testbed, and the meta-learning component's empirical benefit is confined to
+adaptation rather than steady-state performance. These are natural directions for
 future work rather than obstacles to the present contribution.
 
 \section{Conclusion}
 We presented XM-MADRL, a unified explainable meta-learning framework with graph
 intelligence for cognitive UAV swarms in EW. Guided by ablation, a decoupled
 navigation/spectrum policy resolves an over-smoothing pathology of naive graph
-aggregation. XM-MADRL delivers the best energy efficiency and flight safety with
-competitive mission and communication performance, strong few-shot adaptation,
-and transparent SHAP explanations. Future work includes hardware-in-the-loop
-validation and edge-efficient deployment.
+aggregation. Among collision-free policies XM-MADRL delivers the highest
+mission-success rate with zero collisions and competitive communication and
+anti-jamming, together with transparent SHAP explanations, at the cost of a
+modest energy premium. Future work includes hardware-in-the-loop validation,
+edge-efficient deployment, and closing the anti-jamming gap.
 
 \section*{Reproducibility}
 All code, configurations, and result logs are available at
