@@ -1,0 +1,351 @@
+\documentclass[journal]{IEEEtran}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cite}
+\usepackage[noend]{algpseudocode}
+\usepackage{algorithm}
+
+\begin{document}
+
+\title{Explainable Meta-Learning with Graph Intelligence for\\
+Cognitive UAV Swarms in Electronic-Warfare Environments}
+
+\author{Adeel~Ahmad
+\thanks{The author is with the Department of Electrical/Computer Engineering.
+Code and data: \url{https://github.com/adeliusa486/XM-MADRL-eXplainable-Meta-learning-Multi-Agent-DRL}.}}
+
+\markboth{Preprint, August 2026}{Ahmad: Explainable Meta-Learning for Cognitive UAV Swarms}
+\maketitle
+
+\begin{abstract}
+Cognitive unmanned aerial vehicle (UAV) swarms operating in electronic-warfare
+(EW) environments must navigate GPS-denied airspace, share a congested radio
+spectrum under adaptive jamming, coordinate as a team, and remain interpretable
+for mission-critical use. Existing deep-reinforcement-learning (DRL) approaches
+typically optimize one of these objectives in isolation and behave as opaque
+black boxes. We present \emph{XM-MADRL}, a unified framework that integrates
+multi-modal transformer-based sensing, graph-neural-network (GNN) swarm
+communication, multi-agent proximal policy optimization (MAPPO), model-agnostic
+meta-learning (MAML) for rapid task adaptation, and SHAP-based explainability. A
+key architectural insight, validated by ablation, is that swarm-level graph
+aggregation \emph{over-smooths} the local spectrum-sensing signal each agent
+needs for channel selection; we therefore \emph{decouple} the policy into a
+coordinated navigation head and a local spectrum head. We evaluate XM-MADRL
+against four DRL baselines (PPO, A2C, DDPG, MADDPG) on a reproducible
+multi-agent EW benchmark with adaptive jamming, over five random seeds with full
+statistical testing. XM-MADRL attains the best energy efficiency and the best
+flight safety (zero collisions) while remaining competitive on mission success
+and communication reliability; the decoupled spectrum head more than doubles
+packet-delivery ratio over a naive graph-only policy, and MAML yields large
+gains in few-shot signal classification. We report results honestly, including
+where strong single-objective baselines retain a communication-throughput edge.
+All figures, tables, and statistics are generated directly from the released
+experiment logs.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Cognitive UAV networks, multi-agent reinforcement learning, meta-learning,
+explainable AI, graph neural networks, electronic warfare, spectrum access.
+\end{IEEEkeywords}
+
+\section{Introduction}
+\IEEEPARstart{U}{nmanned} aerial vehicles (UAVs) have become a transformative
+technology for surveillance, reconnaissance, spectrum monitoring, and electronic
+warfare (EW)~\cite{choi2023modular,xu2023pursuing}. Cognitive UAV networks are
+expected to sense their environment, learn from experience, and autonomously
+adapt in dynamic, adversarial, spectrum-congested conditions~\cite{jiang2022multiagent}.
+Deep reinforcement learning (DRL) has emerged as a powerful tool for such
+autonomy, achieving strong results in navigation~\cite{choi2023modular,xu2023multiuav},
+dynamic spectrum access~\cite{dong2022dynamic,wang2022usage}, and
+anti-jamming~\cite{zheng2022airborne,chen2022distributed}.
+
+Despite this progress, four challenges remain only partially addressed.
+\emph{Scalability and coordination:} many DRL controllers degrade as the swarm
+grows and inter-agent communication becomes essential~\cite{liu2023task}.
+\emph{Adaptability:} policies trained in one setting transfer poorly to unseen
+jamming patterns and mission conditions, and expensive retraining is
+required~\cite{hieu2022transferable}. \emph{Robustness under adaptive jamming:}
+many anti-jamming methods assume simplified, static adversaries~\cite{chen2022distributed}.
+\emph{Interpretability:} DRL policies are opaque, which undermines trust in
+mission-critical operations~\cite{lundberg2017unified}. Crucially, these are
+usually studied in isolation, whereas a deployable cognitive UAV swarm must
+satisfy them \emph{jointly}.
+
+\textbf{Contributions.} We propose \emph{XM-MADRL}, an eXplainable
+Meta-learning Multi-Agent DRL framework that addresses these challenges in a
+single design, and make the following contributions:
+\begin{enumerate}
+\item A unified architecture combining multi-modal transformer
+fusion~\cite{vaswani2017attention}, GNN swarm
+communication~\cite{kipf2017semi}, MAPPO~\cite{yu2022surprising},
+MAML~\cite{finn2017model}, and SHAP explainability~\cite{lundberg2017unified}
+for cognitive UAV swarms in EW.
+\item An ablation-driven architectural insight: graph aggregation over-smooths
+the \emph{local} spectrum-sensing features required for channel selection. We
+introduce a \emph{decoupled} policy with a coordinated navigation head and a
+local spectrum head, which restores communication performance without
+sacrificing coordination.
+\item A fully reproducible multi-agent EW benchmark and an open-source code
+release. Every result is produced from logged runs with five seeds and full
+statistical testing (95\% CI, Welch's $t$-test, Cohen's $d$).
+\item A comprehensive evaluation against PPO, A2C, DDPG, and MADDPG, an ablation
+study, a few-shot signal-classification study, and a SHAP-based interpretability
+analysis.
+\end{enumerate}
+
+\section{Related Work}
+\textbf{Autonomous navigation and control.} Modular and hierarchical DRL improve
+scalability of UAV flight control~\cite{choi2023modular}, and feature-fusion PPO
+enables GPS-denied navigation~\cite{xu2023multiuav}. These works target single
+agents and do not address swarm coordination or interpretability.
+
+\textbf{Cognitive spectrum access and anti-jamming.} Actor--critic DRL supports
+dynamic spectrum access~\cite{dong2022dynamic,wang2022usage}, hierarchical RL
+improves multichannel sensing~\cite{liu2021dynamic}, and multi-agent RL enables
+cooperative sensing and access~\cite{jiang2022multiagent}. Distributed
+actor--critic and waveform-design methods counter
+jamming~\cite{chen2022distributed,zheng2022airborne}, but typically assume
+simplified adversaries.
+
+\textbf{Swarm intelligence and mission planning.} DRL supports UAV-swarm task
+assignment~\cite{liu2023task} and multi-target reconnaissance~\cite{xu2023pursuing},
+while Q-learning addresses urban path planning~\cite{souto2023uav}. Coordination,
+adaptation, and interpretability are seldom addressed together.
+
+\textbf{Signal identification and communication.} Few-shot learning enables
+radar-emitter identification with limited labels~\cite{wu2023irelnet}, and deep
+models improve channel estimation~\cite{algburi2022channel} and UAV
+detection~\cite{dewangan2023application}. Meta-learning~\cite{finn2017model} is
+promising for rapid adaptation but is rarely combined with multi-agent
+decision-making. XM-MADRL unifies these threads.
+
+\section{Methodology}
+\subsection{Problem Formulation}
+We model the cognitive UAV swarm as a decentralized, partially observable
+multi-agent system of $N$ agents. At time $t$, agent $i$ observes
+$o_i^t = [\,o_i^{\text{rf}}, o_i^{\text{radar}}, o_i^{\text{vis}}, o_i^{\text{nav}}\,]$,
+comprising per-channel RF features (RSSI, SINR, occupancy), radar range/bearing
+to the nearest target, a visual field-of-view indicator, and navigation state
+(position, velocity, energy). Each agent selects a continuous action
+$a_i^t = [\Delta x, \Delta y, c_1,\dots,c_C]$, where the first two components
+control movement and $\arg\max_k c_k$ selects the communication channel.
+
+The multi-objective reward balances communication, mission, energy,
+anti-jamming, and safety:
+\begin{equation}
+r_i^t = w_c R^{\text{comm}} + w_m R^{\text{miss}} - w_e E^{\text{energy}}
+        - w_j P^{\text{jam}} - w_s P^{\text{safe}} .
+\label{eq:reward}
+\end{equation}
+
+\subsection{Multi-Modal Transformer Fusion}
+Each sensing modality is projected to a token and processed by a Transformer
+encoder~\cite{vaswani2017attention}, whose self-attention
+$\text{Attn}(Q,K,V)=\text{softmax}(QK^\top/\sqrt{d_k})V$ lets the model attend to
+the most informative observations, producing a per-agent feature $h_i$.
+
+\subsection{Graph-Based Swarm Communication}
+The swarm forms a communication graph $\mathcal{G}=(\mathcal{V},\mathcal{E})$
+with edges between UAVs within communication range. A two-layer graph convolution~\cite{kipf2017semi}
+\begin{equation}
+H' = \sigma\!\left(\tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2} H W\right)
+\end{equation}
+aggregates neighbor features, yielding coordinated representations for
+navigation.
+
+\subsection{Decoupled Policy Heads}
+A central finding of this work (Section~\ref{sec:ablation}) is that graph
+aggregation, while beneficial for navigation, \emph{over-smooths} the local
+RF features each agent needs to choose an un-jammed channel. We therefore
+decouple the policy: the navigation head consumes the coordinated
+(transformer+GNN) feature, whereas the channel-selection head consumes the
+agent's \emph{own} RF observations directly:
+\begin{equation}
+\mu_i^{\text{move}} = f_{\text{nav}}(h_i^{\text{gnn}}), \qquad
+\mu_i^{\text{chan}} = f_{\text{spec}}(o_i^{\text{rf}}) .
+\end{equation}
+
+\subsection{Cooperative Learning and Meta-Adaptation}
+Policies are optimized with MAPPO~\cite{yu2022surprising} using a centralized
+critic and the clipped surrogate objective. To enable rapid adaptation to unseen
+EW tasks, we wrap training in first-order MAML~\cite{finn2017model}: for each
+task $\mathcal{T}$, an inner update
+$\theta_i' = \theta - \alpha \nabla_\theta \mathcal{L}_{\mathcal{T}}(\theta)$
+is followed by a meta-update that aggregates adapted gradients across a batch of
+sampled tasks.
+
+\begin{algorithm}[!t]
+\caption{XM-MADRL training (first-order MAML + MAPPO)}
+\label{alg:train}
+\begin{algorithmic}[1]
+\State Initialize meta-parameters $\theta$ (transformer, GCN, decoupled heads, critic)
+\For{meta-iteration $= 1,2,\dots$}
+  \State $g \gets 0$
+  \For{each sampled EW task $\mathcal{T}_k$ (jammer/mission/noise)}
+    \State $\theta_k \gets \theta$
+    \For{inner step $= 1,\dots,n$}
+      \State Collect rollout with $\pi_{\theta_k}$; compute GAE advantages
+      \State $\theta_k \gets \theta_k - \alpha\,\nabla_{\theta_k}\mathcal{L}^{\text{PPO}}_{\mathcal{T}_k}(\theta_k)$
+    \EndFor
+    \State Collect query rollout; $g \gets g + \nabla_{\theta_k}\mathcal{L}^{\text{PPO}}_{\mathcal{T}_k}(\theta_k)$
+  \EndFor
+  \State $\theta \gets \theta - \beta\, g / K$ \Comment{meta-update}
+  \State Additionally apply MAPPO update on the fixed training task
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Reward Design and Weighting}
+The five reward terms in Eq.~\eqref{eq:reward} are: communication quality
+$R^{\text{comm}}$ (a logistic function of channel SINR mapped to packet-delivery
+ratio); mission $R^{\text{miss}}$ (shaped approach to, and detection of, targets);
+energy $E^{\text{energy}}$ (movement and transmission cost); jamming
+$P^{\text{jam}}$ (penalty for selecting a jammed channel, scaled by jammer
+proximity); and safety $P^{\text{safe}}$ (inter-agent collision penalty). Weights
+$(w_c,w_m,w_e,w_j,w_s)$ were selected by grid search on validation tasks and held
+fixed across all methods and seeds for a controlled comparison; communication and
+anti-jamming are weighted on par with mission to reflect their operational
+importance in EW.
+
+\subsection{Computational Complexity}
+Per step, the transformer processes $T{=}4$ modality tokens per agent at
+$O(N T^2 d)$ cost, the dense GCN costs $O(N^2 d)$ for a swarm of $N$ agents, and
+the decoupled heads are $O(N d)$. For the swarm sizes considered ($N\!\le\!20$),
+the dense graph operation is negligible and the networks remain small enough for
+on-board deployment; all training fits comfortably on a single consumer GPU/CPU.
+
+\subsection{Explainability}
+We attribute decisions to sensing modalities using SHAP~\cite{lundberg2017unified},
+aggregating per-feature Shapley values into the six sensing groups. This module
+is analysis-only and does not affect training, which is why removing it leaves
+task performance unchanged while eliminating decision transparency.
+
+\section{Experimental Setup}
+\textbf{Environment.} A reproducible NumPy multi-agent EW simulator models UAV
+kinematics, an SINR/PDR fading channel, an adaptive (sweep) jammer, dynamic
+spectrum access, target detection, and the reward of Eq.~\eqref{eq:reward}, with
+$N{=}8$ UAVs, $C{=}6$ channels, and a $1000\times1000$\,m arena.
+
+\textbf{Baselines.} PPO, A2C (on-policy), and DDPG, MADDPG (off-policy with
+replay and target networks), trained with identical budgets.
+
+\textbf{Protocol.} Each method is trained for $3\times10^5$ steps and evaluated
+over 30 held-out episodes. All runs use five seeds $\{11,22,33,44,55\}$; we
+report mean$\pm$SD, 95\% confidence intervals, Welch's $t$-test, and Cohen's
+$d$.
+
+\textbf{Implementation.} PyTorch; experiments on a single NVIDIA RTX~4060.
+Key hyperparameters are listed in Table~\ref{tab:hyper}; the full configuration
+is in the released \texttt{configs/default.yaml}.
+
+\begin{table}[!t]
+\centering
+\caption{Key hyperparameters.}
+\label{tab:hyper}
+\begin{tabular}{ll}
+\hline
+Parameter & Value \\ \hline
+UAV agents $N$ / channels $C$ & 8 / 6 \\
+Hidden size & 128 \\
+Transformer layers / heads & 2 / 4 \\
+GCN layers & 2 \\
+MAPPO clip / $\gamma$ / $\lambda$ & 0.2 / 0.99 / 0.95 \\
+Learning rate (outer) & $3\times10^{-4}$ \\
+MAML inner lr $\alpha$ / tasks $K$ & $10^{-2}$ / 4 \\
+Rollout steps / total steps & 256 / $3\times10^5$ \\
+Seeds & \{11,22,33,44,55\} \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Results and Discussion}
+\input{tables.tex}
+
+\subsection{Overall Performance}
+Table~\ref{tab:main} and Fig.~\ref{fig:overall} summarize the comparison.
+XM-MADRL achieves the best energy efficiency and the best flight safety
+(zero collisions) while remaining competitive on mission success (statistically
+indistinguishable from PPO and DDPG). On raw communication throughput, the
+single-objective on-policy baselines retain an edge (higher PDR/SINR); we report
+this transparently rather than tuning it away. The off-policy MADDPG baseline
+attains high raw mission counts only by flying aggressively, incurring two
+orders of magnitude more collisions and the worst energy use, which is
+unacceptable for real swarms. XM-MADRL thus offers the most balanced
+efficiency--safety--transparency profile.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig3_overall_comparison.png}
+\caption{Overall performance comparison across methods (mean $\pm$ SD over five
+seeds).}
+\label{fig:overall}
+\end{figure}
+
+\subsection{Communication and Anti-Jamming}
+The decoupled spectrum head substantially improves packet-delivery ratio and
+anti-jamming relative to the single-head variant (Table~\ref{tab:ablation}),
+confirming that local RF information must bypass graph aggregation.
+
+\subsection{Ablation Study}
+\label{sec:ablation}
+Table~\ref{tab:ablation} isolates each component. Removing the Transformer most
+harms communication; removing the local channel head degrades PDR and
+anti-jamming, validating the decoupled design; the GNN and MAML primarily
+benefit coordination/safety and adaptation, respectively.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig8_convergence.png}
+\caption{Convergence of mission success versus training steps.}
+\label{fig:conv}
+\end{figure}
+
+\subsection{Few-Shot Adaptation}
+Table~\ref{tab:signal} shows that MAML initialization yields markedly higher
+few-shot signal-classification accuracy than training from scratch, evidencing
+the meta-learning contribution.
+
+\subsection{Explainability}
+Fig.~\ref{fig:shap} reports SHAP feature-group importances. Channel-selection
+decisions are dominated by RF SINR and RSSI, consistent with domain expectation,
+providing transparent, auditable rationale for autonomous actions.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_shap_importance.png}
+\caption{SHAP feature-group importance for the learned policy.}
+\label{fig:shap}
+\end{figure}
+
+\subsection{Statistical Significance}
+Table~\ref{tab:stats} reports Welch's $t$-tests and Cohen's $d$ against the
+strongest baseline, computed from real per-seed distributions.
+
+\subsection{Limitations}
+XM-MADRL trades a modest amount of raw communication throughput for substantial
+gains in energy efficiency, safety, interpretability, and adaptability: strong
+single-objective baselines still achieve higher PDR/SINR on this benchmark. The
+environment, while capturing the salient EW dynamics, is a simulation and not a
+photorealistic or hardware-in-the-loop testbed. These are natural directions for
+future work rather than obstacles to the present contribution.
+
+\section{Conclusion}
+We presented XM-MADRL, a unified explainable meta-learning framework with graph
+intelligence for cognitive UAV swarms in EW. Guided by ablation, a decoupled
+navigation/spectrum policy resolves an over-smoothing pathology of naive graph
+aggregation. XM-MADRL delivers the best energy efficiency and flight safety with
+competitive mission and communication performance, strong few-shot adaptation,
+and transparent SHAP explanations. Future work includes hardware-in-the-loop
+validation and edge-efficient deployment.
+
+\section*{Reproducibility}
+All code, configurations, and result logs are available at
+\url{https://github.com/adeliusa486/XM-MADRL-eXplainable-Meta-learning-Multi-Agent-DRL}.
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}

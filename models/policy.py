@@ -54,6 +54,7 @@ class XMActorCritic(nn.Module):
         gnn_layers: int = 2,
         use_transformer: bool = True,
         use_gnn: bool = True,
+        use_local_channel_head: bool = True,
     ):
         super().__init__()
         self.obs_dim = obs_dim
@@ -61,6 +62,15 @@ class XMActorCritic(nn.Module):
         self.n_agents = n_agents
         self.use_transformer = use_transformer
         self.use_gnn = use_gnn
+        # Decoupled heads: navigation uses the coordinated (transformer+GNN)
+        # feature, but channel selection is a *local* spectrum decision that the
+        # GNN would over-smooth -- so it is driven directly by the agent's own RF
+        # observations. (Ablation-motivated: removing GNN/MAML improved comms.)
+        self.use_local_channel_head = use_local_channel_head
+        self.n_channels = act_dim - 2
+        self.rf_start = feature_groups["RF_RSSI"].start
+        self.rf_end = feature_groups["RF_occupancy"].stop
+        rf_dim = self.rf_end - self.rf_start
 
         self.tokenizer = MultiModalTokenizer(feature_groups, hidden)
         if use_transformer:
@@ -79,7 +89,14 @@ class XMActorCritic(nn.Module):
             nn.Linear(hidden, hidden), nn.ReLU(),
             nn.Linear(hidden, hidden), nn.ReLU(),
         )
-        self.mu = nn.Linear(hidden, act_dim)
+        if use_local_channel_head:
+            self.mu_move = nn.Linear(hidden, 2)                 # coordinated navigation
+            self.channel_head = nn.Sequential(                 # local spectrum decision
+                nn.Linear(rf_dim, hidden), nn.ReLU(),
+                nn.Linear(hidden, self.n_channels),
+            )
+        else:
+            self.mu = nn.Linear(hidden, act_dim)               # legacy single head (ablation)
         self.log_std = nn.Parameter(torch.zeros(act_dim) - 0.5)
 
         # centralised critic: consumes mean-pooled swarm feature
@@ -103,10 +120,20 @@ class XMActorCritic(nn.Module):
             fused = self.gnn(fused, adj)
         return fused
 
+    def _mu(self, feat: torch.Tensor, obs: torch.Tensor) -> torch.Tensor:
+        """Assemble the action mean from decoupled navigation/channel heads."""
+        h = self.actor(feat)
+        if self.use_local_channel_head:
+            move = self.mu_move(h)                                   # (..., 2)
+            rf = obs[..., self.rf_start:self.rf_end]                 # local spectrum
+            ch = self.channel_head(rf)                               # (..., C)
+            return torch.cat([move, ch], dim=-1)
+        return self.mu(h)
+
     # -- actor / critic ----------------------------------------------------- #
     def forward(self, obs: torch.Tensor, adj: Optional[torch.Tensor] = None):
         feat = self.encode(obs, adj)
-        mu = self.mu(self.actor(feat))
+        mu = self._mu(feat, obs)
         std = self.log_std.clamp(LOG_STD_MIN, LOG_STD_MAX).exp().expand_as(mu)
         dist = Normal(mu, std)
         value = self.critic(feat.mean(dim=0, keepdim=True)).expand(feat.size(0), 1)
@@ -137,7 +164,7 @@ class XMActorCritic(nn.Module):
         fused = fused.reshape(T, N, -1)
         if self.use_gnn:
             fused = self.gnn(fused, adj_TNN)               # (T, N, H)
-        mu = self.mu(self.actor(fused))                    # (T, N, act)
+        mu = self._mu(fused, obs_TN)                       # (T, N, act)
         std = self.log_std.clamp(LOG_STD_MIN, LOG_STD_MAX).exp().expand_as(mu)
         dist = Normal(mu, std)
         logp = dist.log_prob(act_TN).sum(-1)               # (T, N)

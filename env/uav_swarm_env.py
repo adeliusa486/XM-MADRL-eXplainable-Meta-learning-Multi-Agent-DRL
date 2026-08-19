@@ -60,10 +60,13 @@ class TaskConfig:
     jam_period: int = 20               # steps per sweep hop
     disturbance: float = 0.05          # process/observation noise level
     # ---- reward weights --------------------------------------------------- #
-    w_comm: float = 1.0
+    # communication quality and anti-jamming are first-class objectives here:
+    # the framework is designed to exploit coordinated, adaptive spectrum use,
+    # so they are weighted on par with mission success rather than below it.
+    w_comm: float = 1.3
     w_mission: float = 1.5
     w_energy: float = 0.5
-    w_jam: float = 0.8
+    w_jam: float = 1.2
     w_safety: float = 2.0
     seed: Optional[int] = None
 

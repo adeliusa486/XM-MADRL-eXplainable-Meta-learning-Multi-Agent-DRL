@@ -81,8 +81,12 @@ def fig_convergence(results: Path, out: Path):
         L = min(len(h) for h in hists)
         if L == 0:
             continue
+        def succ(entry):
+            if "mission_success_pct" in entry:
+                return entry["mission_success_pct"]
+            return entry.get("mission_success", 0.0) * 100.0
         steps = [hists[0][j].get("step", j) for j in range(L)]
-        curves = np.array([[h[j]["mission_success_pct"] for j in range(L)] for h in hists])
+        curves = np.array([[succ(h[j]) for j in range(L)] for h in hists])
         mu, sd = curves.mean(0), curves.std(0)
         ax.plot(steps, mu, label=m, color=COLORS[i % len(COLORS)])
         ax.fill_between(steps, mu - sd, mu + sd, alpha=0.15, color=COLORS[i % len(COLORS)])

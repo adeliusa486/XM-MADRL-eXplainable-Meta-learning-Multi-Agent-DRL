@@ -11,3 +11,14 @@ venv/
 .env
 .DS_Store
 .ipynb_checkpoints/
+
+# paper build artifacts
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/*.log
+paper/*.log
+paper/c.log
+paper/compile*.log
+results_v1/
