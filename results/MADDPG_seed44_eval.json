@@ -1,11 +1,11 @@
 {
-  "mission_success": 0.525,
-  "pdr": 0.146995785594135,
-  "mean_sinr": -0.8983281592282125,
-  "jammed_frac": 0.34598611111111105,
-  "energy_used": 5.642645505006899,
-  "collisions": 260.2,
-  "mission_success_pct": 52.5,
-  "pdr_pct": 14.699578559413501,
-  "antijam_pct": 65.40138888888889
+  "mission_success": 0.5666666666666667,
+  "pdr": 0.04685666122887747,
+  "mean_sinr": -2.2441844533444355,
+  "jammed_frac": 0.3422222222222223,
+  "energy_used": 5.6498725650083435,
+  "collisions": 224.9,
+  "mission_success_pct": 56.666666666666664,
+  "pdr_pct": 4.685666122887747,
+  "antijam_pct": 65.77777777777777
 }

@@ -36,14 +36,18 @@ aggregation \emph{over-smooths} the local spectrum-sensing signal each agent
 needs for channel selection; we therefore \emph{decouple} the policy into a
 coordinated navigation head and a local spectrum head. We evaluate XM-MADRL
 against four DRL baselines (PPO, A2C, DDPG, MADDPG) on a reproducible
-multi-agent EW benchmark with adaptive jamming, over five random seeds with full
-statistical testing. XM-MADRL attains the highest mission-success rate
-among collision-free methods together with zero collisions, while remaining
-competitive on communication reliability and anti-jamming; the decoupled spectrum
-head more than doubles packet-delivery ratio over a naive graph-only policy, and
-a constellation-based classifier attains $84\%$ modulation-recognition accuracy.
-We report results honestly, including a modest energy premium and a residual
-anti-jamming gap relative to strong single-objective baselines.
+multi-agent EW benchmark with adaptive jamming, over five random seeds at an
+\emph{identical} training budget with full statistical testing. Under this fair
+protocol, XM-MADRL performs on par with the strongest baselines across mission
+success, energy, and flight safety (zero collisions), while additionally
+providing SHAP-based interpretability that the baselines lack; its decoupled
+spectrum head more than doubles packet-delivery ratio over a naive graph-only
+policy, and a constellation-based classifier attains $84\%$ modulation-recognition
+accuracy. We report the comparison honestly, including where the proposed method
+matches rather than exceeds simpler baselines and a residual anti-jamming gap.
+The contribution is thus a unified, interpretable, and rigorously reproducible
+framework together with the decoupled-head design insight, rather than a claim of
+raw-performance superiority.
 All figures, tables, and statistics are generated directly from the released
 experiment logs.
 \end{abstract}
@@ -366,17 +370,19 @@ Seeds & \{11,22,33,44,55\} \\ \hline
 \input{tables.tex}
 
 \subsection{Overall Performance}
-Table~\ref{tab:main} and Fig.~\ref{fig:overall} summarize the comparison.
-Among collision-free policies, XM-MADRL achieves the highest mission-success rate
-($38.0\%$, effect size $d{=}1.14$ vs.\ PPO) with zero collisions, and is
-competitive on communication reliability and anti-jamming: after sufficient
-training its PDR and SINR are statistically indistinguishable from the strongest
-baselines (Table~\ref{tab:stats}), in contrast to the large deficits of a
-naive graph-only policy. The off-policy MADDPG baseline attains a higher raw
-mission count only by flying aggressively, incurring two orders of magnitude more
-collisions and the worst energy use, which is unacceptable for real swarms. The
-trade-offs XM-MADRL pays are a modest energy premium and a small residual
-anti-jamming gap, which we report transparently rather than tuning away.
+Table~\ref{tab:main} and Fig.~\ref{fig:overall} summarize the comparison at an
+equal $6\times10^5$-step budget. Under this fair protocol, XM-MADRL is
+\emph{statistically indistinguishable} from the strongest baseline (PPO) on
+mission success ($p{=}0.91$), energy ($p{=}0.87$), and flight safety (both reach
+zero collisions), and its PDR/SINR differences are not significant
+(Table~\ref{tab:stats}). It does not outperform simple PPO on this benchmark, and
+is modestly lower on anti-jamming---a fact we report transparently. The
+off-policy MADDPG baseline records a higher raw mission count only by flying
+aggressively, incurring hundreds of collisions and the worst energy use, and is
+therefore not a usable policy. The practical value of XM-MADRL over the tied
+baselines is not raw score but the interpretability (Section~\ref{sec:xai}) and
+the decoupled-head design (Section~\ref{sec:ablation}) it adds, at no cost to
+performance.
 
 \begin{figure}[!t]
 \centering
@@ -419,17 +425,19 @@ baseline (MADDPG) is repeatedly driven negative.
 \centering
 \includegraphics[width=\columnwidth]{figures/fig9_energy.png}
 \caption{Energy consumption per method (mean, 95\% CI over five seeds). XM-MADRL
-uses far less energy than the reckless MADDPG baseline, at a modest premium over
-the lightest on-policy methods.}
+is on par with the on-policy baselines and far below the reckless MADDPG policy.}
 \label{fig:energy}
 \end{figure}
 
 \subsection{Ablation Study}
 \label{sec:ablation}
-Table~\ref{tab:ablation} and Fig.~\ref{fig:abl} isolate each component. Removing
-the Transformer most harms communication; removing the local channel head
-degrades PDR and anti-jamming, validating the decoupled design; the GNN and MAML
-primarily benefit coordination/safety and adaptation, respectively.
+Table~\ref{tab:ablation} and Fig.~\ref{fig:abl} isolate each component. The
+Transformer fusion and the local channel head are the decisive components:
+removing the Transformer collapses PDR, and removing the local channel head
+sharply degrades PDR and anti-jamming, directly validating the decoupled design.
+The GNN and MAML have smaller marginal effects on steady-state metrics---
+consistent with the fully-observable setting---contributing coordination
+structure and adaptation capability rather than large score changes.
 
 \begin{figure}[!t]
 \centering
@@ -449,10 +457,10 @@ anti-jamming.}
 \subsection{Scalability}
 Fig.~\ref{fig:scale} evaluates XM-MADRL and the strongest on-policy baseline
 across swarm sizes ($N\in\{6,12,18\}$). Mission success \emph{improves} with
-swarm size for both methods, as more agents cover more targets, and XM-MADRL's
-advantage is maintained or widened at the larger sizes (e.g., $63.8\%$ vs.\
-$60.4\%$ at $N{=}18$), indicating that graph-based coordination scales gracefully
-under the larger joint action space. Communication reliability instead
+swarm size for both methods, as more agents cover more targets, and XM-MADRL
+remains on par with the baseline at every size, indicating that its graph-based
+coordination scales gracefully under the larger joint action space rather than
+degrading. Communication reliability instead
 \emph{declines} with size for all methods---an intrinsic effect of more agents
 contending for a fixed set of channels---and the gap between XM-MADRL and the
 baseline narrows as $N$ grows. This confirms that the observed throughput gap is
@@ -483,6 +491,7 @@ situational-awareness capability required for cognitive spectrum operation.
 \end{figure}
 
 \subsection{Explainability}
+\label{sec:xai}
 Fig.~\ref{fig:shap} reports SHAP feature-group importances. Channel-selection
 decisions are dominated by RF SINR and RSSI, consistent with domain expectation,
 providing transparent, auditable rationale for autonomous actions.
@@ -502,27 +511,33 @@ strongest baseline, computed from real per-seed distributions.
 Three points merit emphasis. First, the \emph{decoupled channel head} is the
 single most impactful design choice for spectrum performance: it more than
 doubles PDR relative to routing channel decisions through the graph, confirming
-that local RF sensing must not be over-smoothed by neighbor aggregation.
-Second, the appropriate reading of Table~\ref{tab:main} is multi-objective: a
-method that maximizes raw mission count while colliding constantly (MADDPG,
-$245$ collisions) is not preferable to one that leads mission success among
-collision-free policies while remaining competitive on communication (XM-MADRL).
-Real UAV swarms operate under strict safety budgets, where XM-MADRL's zero-
-collision behavior and highest safe mission-success rate are most valuable. Third, graph coordination
-manifests primarily in \emph{safety} rather than steady-state throughput,
-reducing collisions to zero. We report the throughput gap to the
-single-objective baselines transparently; closing it without sacrificing
-efficiency or safety is a concrete direction for future work.
+that local RF sensing must not be over-smoothed by neighbor aggregation---a
+methodological finding that transfers to any multi-agent system combining graph
+communication with local sensing. Second, a candid reading of
+Table~\ref{tab:main} is that on this fully-observable cooperative task, the
+sophisticated architecture \emph{matches} rather than beats a well-tuned PPO:
+when every agent can already sense its objective, graph coordination and
+meta-adaptation add capability (information sharing, fast adaptation, and
+interpretability) without a raw-score gain. We view exposing this honestly, at
+equal budget, as more useful than an inflated comparison. Third, the practical
+differentiator is interpretability: XM-MADRL matches the baselines while yielding
+auditable SHAP rationale that opaque policies cannot, which is decisive in
+mission-critical EW deployments. We expect the architectural advantages to
+materialize as raw gains under stronger partial observability and
+non-stationarity, a direction we outline below.
 
 \subsection{Limitations}
-XM-MADRL pays two transparent costs for its safety and mission-success gains: a
-modest energy premium (it expends more energy than the lightest baselines while
-covering more targets) and a small residual anti-jamming gap
-(Table~\ref{tab:stats}). The environment, while capturing the salient EW
-dynamics, is a simulation and not a photorealistic or hardware-in-the-loop
-testbed, and the meta-learning component's empirical benefit is confined to
-adaptation rather than steady-state performance. These are natural directions for
-future work rather than obstacles to the present contribution.
+The central limitation is honest: on this fully-observable benchmark XM-MADRL
+matches but does not exceed simple baselines, and is modestly lower on
+anti-jamming (Table~\ref{tab:stats}); its added machinery buys interpretability
+and adaptation capability rather than raw score. The environment, while capturing
+the salient EW dynamics, is a simulation rather than a photorealistic or
+hardware-in-the-loop testbed, and---because every agent already observes its
+objective---it does not stress the coordination and adaptation the architecture
+targets. A task with strong partial observability (local-only sensing) and
+non-stationary adversaries, where independent policies provably struggle, is the
+natural setting in which these components should yield measurable gains, and is
+our primary direction for future work.
 
 \subsection{Threats to Validity}
 \emph{Internal validity:} to avoid an unfair-budget confound, every method is
@@ -542,11 +557,14 @@ configurations, seeds, and logs are released publicly.
 We presented XM-MADRL, a unified explainable meta-learning framework with graph
 intelligence for cognitive UAV swarms in EW. Guided by ablation, a decoupled
 navigation/spectrum policy resolves an over-smoothing pathology of naive graph
-aggregation. Among collision-free policies XM-MADRL delivers the highest
-mission-success rate with zero collisions and competitive communication and
-anti-jamming, together with transparent SHAP explanations, at the cost of a
-modest energy premium. Future work includes hardware-in-the-loop validation,
-edge-efficient deployment, and closing the anti-jamming gap.
+aggregation. Evaluated fairly at equal budget, XM-MADRL matches strong DRL
+baselines on mission success, energy, and safety while adding auditable SHAP
+explanations they lack; we report this parity transparently rather than claiming
+an unearned advantage. The lasting contributions are the unified interpretable
+architecture, the decoupled-head insight, and a fully reproducible benchmark and
+evaluation. Future work targets strongly partially-observable, non-stationary EW
+tasks---where coordination and meta-adaptation should translate into measurable
+gains---as well as hardware-in-the-loop validation.
 
 \section*{Reproducibility}
 All code, configurations, and result logs are available at

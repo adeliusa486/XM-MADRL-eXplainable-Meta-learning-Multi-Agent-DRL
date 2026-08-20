@@ -58,12 +58,15 @@ d.add_paragraph(
     "spectrum-sensing signal needed for channel selection, and introduce a "
     "decoupled navigation/spectrum policy that more than doubles packet-delivery "
     "ratio over a naive graph-only policy. Across five seeds with full "
-    "statistical testing, XM-MADRL achieves the highest mission-success rate among "
-    "collision-free methods with zero collisions, competitive communication and "
-    "anti-jamming, 84% modulation-recognition accuracy, and transparent "
-    "explanations. We report results honestly, including a modest energy premium "
-    "and a residual anti-jamming gap. All numbers are generated from released "
-    "logs.")
+    "statistical testing at an identical training budget, XM-MADRL performs on par "
+    "with the strongest baselines on mission success, energy, and flight safety "
+    "(zero collisions), while additionally providing SHAP interpretability the "
+    "baselines lack, plus 84% modulation-recognition accuracy. We report the "
+    "comparison honestly, including where the method matches rather than exceeds "
+    "simpler baselines and a residual anti-jamming gap. The contribution is a "
+    "unified, interpretable, reproducible framework plus the decoupled-head "
+    "insight, not a claim of raw-performance superiority. All numbers are "
+    "generated from released logs.")
 
 H(d, "1. Introduction", 1)
 d.add_paragraph(
@@ -125,13 +128,14 @@ for meth, lbl in [("XM-MADRL", "XM-MADRL (ours)"), ("PPO", "PPO"), ("A2C", "A2C"
     rows.append([lbl] + [cell(m(R, meth, k)) for k, _ in metrics])
 add_table(d, ["Method"] + [l for _, l in metrics], rows)
 d.add_paragraph(
-    "Among collision-free policies XM-MADRL achieves the highest mission-success "
-    "rate (38.0%, d=1.14 vs PPO) with zero collisions, and is competitive on "
-    "communication and anti-jamming (PDR/SINR statistically indistinguishable from "
-    "the strongest baselines). MADDPG attains a higher raw mission count only via "
-    "aggressive flight with two orders of magnitude more collisions and the worst "
-    "energy use, undesirable for real swarms. XM-MADRL trades a modest energy "
-    "premium and a small residual anti-jamming gap, reported transparently.")
+    "At equal training budget XM-MADRL is statistically indistinguishable from the "
+    "strongest baseline (PPO) on mission success (p=0.91), energy (p=0.87), and "
+    "flight safety (both zero collisions); it does not outperform simple PPO here "
+    "and is modestly lower on anti-jamming, reported transparently. MADDPG records "
+    "a higher raw mission count only via aggressive flight with hundreds of "
+    "collisions, and is not a usable policy. The value of XM-MADRL over the tied "
+    "baselines is interpretability and the decoupled-head design, at no cost to "
+    "performance.")
 if os.path.exists("figures/fig3_overall_comparison.png"):
     d.add_picture("figures/fig3_overall_comparison.png", width=Inches(5.5))
 
@@ -152,9 +156,9 @@ H(d, "5.3 Scalability", 2)
 if os.path.exists("figures/fig_scalability.png"):
     d.add_picture("figures/fig_scalability.png", width=Inches(5.5))
 d.add_paragraph(
-    "Mission success improves with swarm size for both methods, and XM-MADRL's "
-    "advantage is maintained or widened at larger sizes (63.8% vs 60.4% at N=18), "
-    "indicating graceful scaling. Communication reliability declines with size "
+    "Mission success improves with swarm size for both methods, and XM-MADRL "
+    "remains on par with the baseline at every size, indicating graceful scaling. "
+    "Communication reliability declines with size "
     "for all methods due to more agents contending for a fixed set of channels; "
     "the gap between XM-MADRL and the baseline narrows as N grows, confirming the "
     "throughput gap is spectrum contention, not a scalability failure.")
@@ -178,11 +182,13 @@ H(d, "6. Conclusion", 1)
 d.add_paragraph(
     "XM-MADRL unifies explainable meta-learning with graph intelligence for "
     "cognitive UAV swarms in EW. A decoupled navigation/spectrum policy resolves "
-    "an over-smoothing pathology of naive graph aggregation, yielding the highest "
-    "safe mission-success rate with zero collisions and competitive communication "
-    "and anti-jamming, plus transparent explanations, at a modest energy premium. "
-    "Future work: hardware-in-the-loop validation, edge-efficient deployment, and "
-    "closing the anti-jamming gap.")
+    "an over-smoothing pathology of naive graph aggregation. Evaluated fairly at "
+    "equal budget, XM-MADRL matches strong DRL baselines on mission success, "
+    "energy, and safety while adding auditable SHAP explanations they lack. The "
+    "lasting contributions are the unified interpretable architecture, the "
+    "decoupled-head insight, and a fully reproducible benchmark. Future work "
+    "targets strongly partially-observable, non-stationary EW tasks and "
+    "hardware-in-the-loop validation.")
 
 out = "paper/XM-MADRL_paper.docx"
 d.save(out)

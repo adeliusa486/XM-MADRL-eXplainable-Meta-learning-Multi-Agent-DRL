@@ -290,5 +290,297 @@
   {
     "step": 299008,
     "mission_success": 0.35
+  },
+  {
+    "step": 303104,
+    "mission_success": 0.325
+  },
+  {
+    "step": 307200,
+    "mission_success": 0.5
+  },
+  {
+    "step": 311296,
+    "mission_success": 0.5375
+  },
+  {
+    "step": 315392,
+    "mission_success": 0.4375
+  },
+  {
+    "step": 319488,
+    "mission_success": 0.4125
+  },
+  {
+    "step": 323584,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 327680,
+    "mission_success": 0.4125
+  },
+  {
+    "step": 331776,
+    "mission_success": 0.475
+  },
+  {
+    "step": 335872,
+    "mission_success": 0.4125
+  },
+  {
+    "step": 339968,
+    "mission_success": 0.425
+  },
+  {
+    "step": 344064,
+    "mission_success": 0.4
+  },
+  {
+    "step": 348160,
+    "mission_success": 0.3375
+  },
+  {
+    "step": 352256,
+    "mission_success": 0.4
+  },
+  {
+    "step": 356352,
+    "mission_success": 0.4
+  },
+  {
+    "step": 360448,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 364544,
+    "mission_success": 0.2875
+  },
+  {
+    "step": 368640,
+    "mission_success": 0.275
+  },
+  {
+    "step": 372736,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 376832,
+    "mission_success": 0.325
+  },
+  {
+    "step": 380928,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 385024,
+    "mission_success": 0.4625
+  },
+  {
+    "step": 389120,
+    "mission_success": 0.475
+  },
+  {
+    "step": 393216,
+    "mission_success": 0.5
+  },
+  {
+    "step": 397312,
+    "mission_success": 0.4125
+  },
+  {
+    "step": 401408,
+    "mission_success": 0.375
+  },
+  {
+    "step": 405504,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 409600,
+    "mission_success": 0.45
+  },
+  {
+    "step": 413696,
+    "mission_success": 0.4375
+  },
+  {
+    "step": 417792,
+    "mission_success": 0.425
+  },
+  {
+    "step": 421888,
+    "mission_success": 0.4
+  },
+  {
+    "step": 425984,
+    "mission_success": 0.3
+  },
+  {
+    "step": 430080,
+    "mission_success": 0.45
+  },
+  {
+    "step": 434176,
+    "mission_success": 0.5375
+  },
+  {
+    "step": 438272,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 442368,
+    "mission_success": 0.35
+  },
+  {
+    "step": 446464,
+    "mission_success": 0.325
+  },
+  {
+    "step": 450560,
+    "mission_success": 0.3375
+  },
+  {
+    "step": 454656,
+    "mission_success": 0.4
+  },
+  {
+    "step": 458752,
+    "mission_success": 0.475
+  },
+  {
+    "step": 462848,
+    "mission_success": 0.5
+  },
+  {
+    "step": 466944,
+    "mission_success": 0.4375
+  },
+  {
+    "step": 471040,
+    "mission_success": 0.4125
+  },
+  {
+    "step": 475136,
+    "mission_success": 0.5
+  },
+  {
+    "step": 479232,
+    "mission_success": 0.35
+  },
+  {
+    "step": 483328,
+    "mission_success": 0.35
+  },
+  {
+    "step": 487424,
+    "mission_success": 0.325
+  },
+  {
+    "step": 491520,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 495616,
+    "mission_success": 0.425
+  },
+  {
+    "step": 499712,
+    "mission_success": 0.425
+  },
+  {
+    "step": 503808,
+    "mission_success": 0.45
+  },
+  {
+    "step": 507904,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 512000,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 516096,
+    "mission_success": 0.35
+  },
+  {
+    "step": 520192,
+    "mission_success": 0.2875
+  },
+  {
+    "step": 524288,
+    "mission_success": 0.35
+  },
+  {
+    "step": 528384,
+    "mission_success": 0.425
+  },
+  {
+    "step": 532480,
+    "mission_success": 0.4875
+  },
+  {
+    "step": 536576,
+    "mission_success": 0.4875
+  },
+  {
+    "step": 540672,
+    "mission_success": 0.4625
+  },
+  {
+    "step": 544768,
+    "mission_success": 0.45
+  },
+  {
+    "step": 548864,
+    "mission_success": 0.2625
+  },
+  {
+    "step": 552960,
+    "mission_success": 0.3375
+  },
+  {
+    "step": 557056,
+    "mission_success": 0.425
+  },
+  {
+    "step": 561152,
+    "mission_success": 0.4375
+  },
+  {
+    "step": 565248,
+    "mission_success": 0.4
+  },
+  {
+    "step": 569344,
+    "mission_success": 0.35
+  },
+  {
+    "step": 573440,
+    "mission_success": 0.35
+  },
+  {
+    "step": 577536,
+    "mission_success": 0.3375
+  },
+  {
+    "step": 581632,
+    "mission_success": 0.3875
+  },
+  {
+    "step": 585728,
+    "mission_success": 0.325
+  },
+  {
+    "step": 589824,
+    "mission_success": 0.3625
+  },
+  {
+    "step": 593920,
+    "mission_success": 0.4
+  },
+  {
+    "step": 598016,
+    "mission_success": 0.375
   }
 ]
